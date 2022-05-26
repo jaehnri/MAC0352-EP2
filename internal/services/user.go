@@ -1,9 +1,17 @@
 package services
 
+const (
+	Offline  = "offline"
+	Availale = "online-availale"
+	Playing  = "online-playing"
+)
+
 type UserData struct {
-	Username string
-	State    string
-	Points   int
+	Username      string
+	State         string
+	Points        int
+	ConnectedPort string
+	ConnectedIp   string
 }
 
 type User interface {
@@ -39,11 +47,15 @@ func (u *UserService) Logout(name string) {
 }
 
 func (u *UserService) ListConnected() []UserData {
-	// TODO: Implement logout
+	// TODO: Implement list connected
 	return nil
 }
 
 func (u *UserService) ListAll() []UserData {
-	// TODO: Implement logout
+	// TODO: Implement list all
 	return nil
+}
+
+func (u *UserService) Get(username string) (UserData, error) {
+	return UserData{}, nil
 }
