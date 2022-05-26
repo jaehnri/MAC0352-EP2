@@ -7,67 +7,67 @@ import (
 func TestWhoWon(t *testing.T) {
 	var tests = []struct {
 		table  [tableLength][tableLength]string
-		whoWon string
+		whoWon int
 	}{
 		// X won
 		{
 			[tableLength][tableLength]string{
-				{emptyCell, emptyCell, X},
-				{emptyCell, X, emptyCell},
-				{X, emptyCell, emptyCell},
+				{empty, empty, X},
+				{empty, X, empty},
+				{X, empty, empty},
 			},
-			X,
+			Won,
 		},
 		{
 			[tableLength][tableLength]string{
-				{emptyCell, X, emptyCell},
-				{emptyCell, X, emptyCell},
-				{emptyCell, X, emptyCell},
+				{empty, X, empty},
+				{empty, X, empty},
+				{empty, X, empty},
 			},
-			X,
+			Won,
 		},
 		{
 			[tableLength][tableLength]string{
 				{X, X, X},
-				{emptyCell, emptyCell, emptyCell},
-				{emptyCell, emptyCell, emptyCell},
+				{empty, empty, empty},
+				{empty, empty, empty},
 			},
-			X,
+			Won,
 		},
 		// O won
 		{
 			[tableLength][tableLength]string{
-				{emptyCell, X, emptyCell},
-				{X, X, emptyCell},
+				{empty, X, empty},
+				{X, X, empty},
 				{O, O, O},
 			},
-			O,
+			Lost,
 		},
 		// nobody won
 		{
 			[tableLength][tableLength]string{
-				{emptyCell, emptyCell, emptyCell},
-				{emptyCell, emptyCell, emptyCell},
-				{emptyCell, emptyCell, emptyCell},
+				{empty, empty, empty},
+				{empty, empty, empty},
+				{empty, empty, empty},
 			},
-			emptyCell,
+			Playing,
 		},
 		{
 			[tableLength][tableLength]string{
-				{emptyCell, X, emptyCell},
-				{X, X, emptyCell},
+				{empty, X, empty},
+				{X, X, empty},
 				{O, O, X},
 			},
-			emptyCell,
+			Playing,
 		},
 	}
 
 	for i, test := range tests {
-		game := Game{}
+		game := NewGame(X)
 		game.table = test.table
-		got := game.WhoWon()
+		got := game.State()
 		if test.whoWon != got {
-			t.Errorf("%d : Expected: %s, Got: %s", i, test.whoWon, got)
+			t.Errorf("%d : Expected: %d, Got: %d", i, test.whoWon, got)
 		}
 	}
 
