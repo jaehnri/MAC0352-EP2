@@ -9,3 +9,6 @@ build-client:
 
 run-client:
 	./client
+
+test:
+	go test ./...
