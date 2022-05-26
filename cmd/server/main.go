@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"ep2/internal/servers"
+)
 
 func main() {
-	fmt.Printf("oi")
+	servers.StartTCPServer()
 }
