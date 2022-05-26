@@ -1,2 +1,6 @@
 ### Binaries ###
 server
+client
+
+### MacOS ###
+.DS_Store
