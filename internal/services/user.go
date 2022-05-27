@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ep2/internal/data"
 	"ep2/internal/repository"
 	"fmt"
 )
@@ -10,14 +11,6 @@ const (
 	Available = "online-available"
 	Playing   = "online-playing"
 )
-
-type UserData struct {
-	Username      string
-	State         string
-	Points        int
-	ConnectedIp   string
-	ConnectedPort int
-}
 
 type User interface {
 	Create(name string, password string)
@@ -60,16 +53,16 @@ func (u *UserService) Logout(name string) {
 	// TODO: Implement logout
 }
 
-func (u *UserService) ListConnected() []UserData {
+func (u *UserService) ListConnected() []data.UserData {
 	// TODO: Implement list connected
 	return nil
 }
 
-func (u *UserService) ListAll() []UserData {
+func (u *UserService) ListAll() []data.UserData {
 	// TODO: Implement list all
 	return nil
 }
 
-func (u *UserService) Get(username string) (UserData, error) {
-	return UserData{}, nil
+func (u *UserService) Get(username string) (data.UserData, error) {
+	return data.UserData{}, nil
 }
