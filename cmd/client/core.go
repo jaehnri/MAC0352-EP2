@@ -57,6 +57,8 @@ func (c *Client) handleIn(params []string) error {
 	if err != nil {
 		return err
 	}
+	go c.listenCalled()
+	go c.heartbeat()
 	c.state.isLogged = true
 	c.state.username = username
 	fmt.Printf("Você está logado como '%s'\n", username)
@@ -115,7 +117,11 @@ func (c *Client) handleCall(params []string) error {
 	if user.State != services.Availale {
 		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
 	}
-	c.state.conn = c.gameService.Connect(user.ConnectedIp, user.ConnectedPort)
+	c.state.conn, err = c.gameService.Connect(user.ConnectedIp, user.ConnectedPort)
+	if err != nil {
+		return err
+	}
+	go c.listenOponent()
 	c.state.inGame = true
 	c.state.game = game.NewGame(game.X) // TODO
 	return nil
@@ -149,10 +155,28 @@ func (c *Client) handleOver(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
+	c.gameService.SendDraw(c.state.username)
 	c.gameService.Disconnect(c.state.conn)
 	c.state.inGame = false
 	c.state.conn = nil
 	return nil
+}
+
+func (c *Client) handleTableChanged() {
+	c.state.game.PrintTable()
+	switch c.state.game.State() {
+	case game.Playing:
+		return
+	case game.Won:
+		fmt.Println("Você ganhou!")
+		c.gameService.SendWon(c.state.username)
+	case game.Draw:
+		fmt.Println("Deu velha...")
+		c.gameService.SendDraw(c.state.username)
+	case game.Lost:
+		fmt.Println("Você perdeu...")
+	}
+	c.gameService.Disconnect(c.state.conn)
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -160,10 +184,11 @@ func (c *Client) handleOver(params []string) error {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *Client) heartbeat() {
+	// TODO: send and receive heartbeats (maximum 3 minutes)
 }
 func (c *Client) listenCalled() {
+	// TODO
 }
-func (c *Client) listenOver() {
-}
-func (c *Client) listenPlay() {
+func (c *Client) listenOponent() {
+	// TODO
 }

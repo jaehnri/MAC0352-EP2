@@ -27,6 +27,7 @@ func opositePlayer(player string) string {
 const (
 	Won = iota
 	Lost
+	Draw
 	Playing
 )
 
@@ -34,10 +35,11 @@ const playsFirst = X
 const tableLength = 3
 
 type Game struct {
-	table   [tableLength][tableLength]string
-	User    string
-	Oponent string
-	turn    string
+	table      [tableLength][tableLength]string
+	emptyCells int
+	User       string
+	Oponent    string
+	turn       string
 }
 
 // //////////////////////////////////////////////////////////////////////
@@ -45,7 +47,12 @@ type Game struct {
 // //////////////////////////////////////////////////////////////////////
 
 func NewGame(user string) Game {
-	game := Game{User: user, Oponent: opositePlayer(user), turn: playsFirst}
+	game := Game{
+		User:       user,
+		Oponent:    opositePlayer(user),
+		turn:       playsFirst,
+		emptyCells: tableLength * tableLength,
+	}
 	for i := 0; i < tableLength; i++ {
 		for j := 0; j < tableLength; j++ {
 			game.table[i][j] = empty
@@ -85,6 +92,7 @@ func (g *Game) play(i int, j int, player string) error {
 	if g.table[i][j] != empty {
 		return fmt.Errorf("cell (%d,%d) is not empty", i, j)
 	}
+	g.emptyCells--
 	g.table[i][j] = player
 	g.turn = opositePlayer(g.turn)
 	return nil
@@ -97,6 +105,9 @@ func (g Game) State() int {
 	}
 	if userWon == g.Oponent {
 		return Lost
+	}
+	if g.emptyCells == 0 {
+		return Draw
 	}
 	return Playing
 }
@@ -117,4 +128,13 @@ func (g Game) lineHasWon(line [tableLength]cellPosition) string {
 		}
 	}
 	return firstCell
+}
+
+func (g Game) PrintTable() {
+	for i, line := range g.table {
+		fmt.Printf(" %s | %s | %s \n", line[0], line[1], line[2])
+		if i != tableLength-1 {
+			fmt.Println("-------------")
+		}
+	}
 }

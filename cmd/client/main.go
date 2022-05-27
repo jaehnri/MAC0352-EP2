@@ -40,6 +40,7 @@ func main() {
 			handleError(client.handleCall(params))
 		case "play":
 			handleError(client.handlePlay(params))
+			client.handleTableChanged()
 		case "delay":
 			handleError(client.handleDelay(params))
 		case "over":

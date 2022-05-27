@@ -12,9 +12,9 @@ func NewGameService() *GameService {
 	return &GameService{Delay: 0}
 }
 
-func (g *GameService) Connect(ip string, port string) net.Conn {
+func (g *GameService) Connect(ip string, port string) (net.Conn, error) {
 	// TODO: Implement connect
-	return nil
+	return nil, nil
 }
 
 func (g *GameService) Disconnect(conn net.Conn) {
@@ -22,5 +22,13 @@ func (g *GameService) Disconnect(conn net.Conn) {
 }
 
 func (g *GameService) SendPlay(i int, j int) {
+	// TODO: Implement send play
+}
+
+func (g *GameService) SendWon(username string) {
+	// TODO: Implement send play
+}
+
+func (g *GameService) SendDraw(username string) {
 	// TODO: Implement send play
 }
