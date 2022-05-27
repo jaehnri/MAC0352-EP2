@@ -23,7 +23,7 @@ type UserRepository struct {
 func NewUserRepository() *UserRepository {
 	connectionString := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s sslmode=disable",
-		"172.17.0.2", "postgres", "postgres", "postgres")
+		"172.17.0.3", "postgres", "postgres", "postgres")
 	dbPool, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		panic(err)
