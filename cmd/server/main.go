@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
-	servers.StartTCPServer()
+	tcpServer := servers.NewTCPServer()
+	tcpServer.StartTCPServer()
 }
