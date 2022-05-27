@@ -44,7 +44,9 @@ func main() {
 		// USER
 		case "new":
 			{
-				err := userService.Create(words[1], words[2])
+				// TODO: O userService aqui é para o servidor cadastrar o usuário no banco.
+				// O cliente precisa enviar um pacote TCP ou UDP contendo "new <user> <pass>"
+				err := userService.Create(words)
 				if err != nil {
 					fmt.Println(err)
 				} else {
@@ -106,7 +108,7 @@ func main() {
 				if err != nil {
 					fmt.Println(err)
 				} else {
-					if user.State != services.Availale {
+					if user.State != services.Available {
 						fmt.Printf("O usuário '%s' não está disponível.", user.Username)
 					} else {
 						state.conn = gameService.Connect(user.ConnectedIp, user.ConnectedPort)
