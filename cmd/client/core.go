@@ -41,7 +41,13 @@ func NewClient() Client {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *Client) handleNew(params []string) error {
-	err := c.userService.Create(params[0], params[1])
+	// TODO:
+	// port, errPort := strconv.ParseInt(params[0], 10, 32)
+	// if errPort != nil {
+	// 	return errPort
+	// }
+	// err := c.userService.Create(params[0], port)
+	err := c.userService.Create(params)
 	if err != nil {
 		return err
 	}
@@ -114,7 +120,7 @@ func (c *Client) handleCall(params []string) error {
 	if err != nil {
 		return err
 	}
-	if user.State != services.Availale {
+	if user.State != services.Available {
 		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
 	}
 	c.state.conn, err = c.gameService.Connect(user.ConnectedIp, user.ConnectedPort)

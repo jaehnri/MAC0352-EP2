@@ -12,7 +12,7 @@ func NewGameService() *GameService {
 	return &GameService{Delay: 0}
 }
 
-func (g *GameService) Connect(ip string, port string) (net.Conn, error) {
+func (g *GameService) Connect(ip string, port int) (net.Conn, error) {
 	// TODO: Implement connect
 	return nil, nil
 }
