@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"ep2/internal/game"
@@ -40,7 +40,7 @@ func NewClient() Client {
 // USER
 // /////////////////////////////////////////////////////////////////////
 
-func (c *Client) handleNew(params []string) error {
+func (c *Client) HandleNew(params []string) error {
 	// TODO:
 	// port, errPort := strconv.ParseInt(params[0], 10, 32)
 	// if errPort != nil {
@@ -54,7 +54,7 @@ func (c *Client) handleNew(params []string) error {
 	fmt.Println("Usuário criado com sucesso")
 	return nil
 }
-func (c *Client) handleIn(params []string) error {
+func (c *Client) HandleIn(params []string) error {
 	if c.state.isLogged {
 		return errors.New("você já está logado, faça logout para trocar de usuário")
 	}
@@ -70,7 +70,7 @@ func (c *Client) handleIn(params []string) error {
 	fmt.Printf("Você está logado como '%s'\n", username)
 	return nil
 }
-func (c *Client) handlePass(params []string) error {
+func (c *Client) HandlePass(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
 	}
@@ -81,7 +81,7 @@ func (c *Client) handlePass(params []string) error {
 	fmt.Println("Sua senha foi alterada.")
 	return nil
 }
-func (c *Client) handleOut(params []string) error {
+func (c *Client) HandleOut(params []string) error {
 	if c.state.inGame {
 		return errors.New("você está em um jogo")
 	}
@@ -93,14 +93,14 @@ func (c *Client) handleOut(params []string) error {
 	c.state.username = ""
 	return nil
 }
-func (c *Client) handleL(params []string) error {
+func (c *Client) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
 	for _, user := range c.userService.ListConnected() {
 		fmt.Printf("• %s (%s)", user.Username, user.State)
 	}
 	return nil
 }
-func (c *Client) handleHalloffame(params []string) error {
+func (c *Client) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
 	for i, user := range c.userService.ListConnected() {
 		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
@@ -112,7 +112,7 @@ func (c *Client) handleHalloffame(params []string) error {
 // GAME
 // /////////////////////////////////////////////////////////////////////
 
-func (c *Client) handleCall(params []string) error {
+func (c *Client) HandleCall(params []string) error {
 	if !c.state.inGame {
 		return errors.New("faça login antes de iniciar um jogo")
 	}
@@ -133,7 +133,7 @@ func (c *Client) handleCall(params []string) error {
 	return nil
 
 }
-func (c *Client) handlePlay(params []string) error {
+func (c *Client) HandlePlay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
@@ -150,14 +150,14 @@ func (c *Client) handlePlay(params []string) error {
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
 	return nil
 }
-func (c *Client) handleDelay(params []string) error {
+func (c *Client) HandleDelay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
 	fmt.Printf("A latência é de %d millisegundos.\n", c.gameService.Delay)
 	return nil
 }
-func (c *Client) handleOver(params []string) error {
+func (c *Client) HandleOver(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
@@ -168,7 +168,7 @@ func (c *Client) handleOver(params []string) error {
 	return nil
 }
 
-func (c *Client) handleTableChanged() {
+func (c *Client) HandleTableChanged() {
 	c.state.game.PrintTable()
 	switch c.state.game.State() {
 	case game.Playing:
