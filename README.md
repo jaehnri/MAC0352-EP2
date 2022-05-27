@@ -18,6 +18,19 @@ make build-client
 make run-client
 ```
 
+**Docker Compose:**
+The easiest way to run the server and the database is to run
+```sh
+docker-compose up
+```
+
+It makes sure to run the server, the database and the database volume so the data is kept even if the database is killed.
+
+It deploys the containers on Docker's bridge network. It assigns IP addresses to the containers. It can be inspected like this:
+```sh
+docker inspect network bridge
+```
+
 ## Test
 ```sh
 make test
