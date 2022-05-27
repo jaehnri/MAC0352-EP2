@@ -2,18 +2,30 @@ package servers
 
 import (
 	"bytes"
+	"ep2/internal/router"
 	"fmt"
 	"net"
 	"os"
 )
 
 const (
-	ConnHost = "localhost"
-	ConnPort = "8080"
-	ConnType = "tcp"
+	ConnHost       = "localhost"
+	ConnPort       = "8080"
+	ConnType       = "tcp"
+	MaxPayloadSize = 2048
 )
 
-func StartTCPServer() {
+type TCPServer struct {
+	Router *router.Router
+}
+
+func NewTCPServer() *TCPServer {
+	return &TCPServer{
+		Router: router.NewRouter(),
+	}
+}
+
+func (tcp *TCPServer) StartTCPServer() {
 	// Listen for incoming connections.
 	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
 	if err != nil {
@@ -32,23 +44,33 @@ func StartTCPServer() {
 			os.Exit(1)
 		}
 		// Handle connections in a new goroutine.
-		go handleRequest(conn)
+		go tcp.handleRequest(conn)
 	}
 }
 
-func handleRequest(conn net.Conn) {
+func (tcp *TCPServer) handleRequest(conn net.Conn) {
 	// Make a buffer to hold incoming data.
-	buf := make([]byte, 1024)
+	buf := make([]byte, MaxPayloadSize)
+
 	// Read the incoming connection into the buffer.
-	_, err := conn.Read(buf)
+	qtdBytesRead, err := conn.Read(buf)
 	if err != nil {
 		fmt.Println("Error reading:", err.Error())
 	}
-	fmt.Println("Data received: ", bytes.NewBuffer(buf).String())
+
+	payload := parseTCPPayload(buf, qtdBytesRead)
+	response := tcp.Router.Route(payload)
 
 	// Send a response back to client.
-	conn.Write([]byte("Message received."))
+	conn.Write([]byte(response))
 
 	// Close the TCP connection.
 	conn.Close()
+}
+
+// Buf is always initialized as an array of 2048 bytes. However, most packets are sent with less than that.
+// Here, we trim the byte array to use only how many bytes were actually read by conn.Read()
+// and we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).
+func parseTCPPayload(buf []byte, qtdBytesRead int) string {
+	return bytes.NewBuffer(buf).String()[:qtdBytesRead-2]
 }
