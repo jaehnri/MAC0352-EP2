@@ -1,17 +1,22 @@
 package services
 
+import (
+	"ep2/internal/repository"
+	"fmt"
+)
+
 const (
-	Offline  = "offline"
-	Availale = "online-availale"
-	Playing  = "online-playing"
+	Offline   = "offline"
+	Available = "online-available"
+	Playing   = "online-playing"
 )
 
 type UserData struct {
 	Username      string
 	State         string
 	Points        int
-	ConnectedPort string
 	ConnectedIp   string
+	ConnectedPort int
 }
 
 type User interface {
@@ -19,17 +24,26 @@ type User interface {
 	ChangePassword(name string, password string)
 	Login(name string)
 	Logout(name string)
+	ListConnected()
+	ListAll()
 }
 
-type UserService struct{}
+type UserService struct {
+	repository *repository.UserRepository
+}
 
 func NewUserService() *UserService {
-	return &UserService{}
+	return &UserService{
+		repository: repository.NewUserRepository(),
+	}
 }
 
-func (u *UserService) Create(name string, password string) error {
-	// TODO: Implement user creation
-	return nil
+func (u *UserService) Create(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("ERRO: formato esperado é: new <user> <senha>.\n")
+	}
+
+	return u.repository.Create(args[0], args[1])
 }
 
 func (u *UserService) ChangePassword(name string, oldpassword, newpassword string) error {
