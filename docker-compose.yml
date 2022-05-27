@@ -12,6 +12,11 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
       - ./cmd/database/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+  server:
+    network_mode: bridge
+    build:
+      dockerfile: build/package/docker/server/Dockerfile
+      context: .
 volumes:
   db:
     driver: local
