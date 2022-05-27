@@ -2,9 +2,12 @@
 server
 client
 
+### Don't ignore these folders ###
+!server/
+!client/
+
 ### MacOS ###
 .DS_Store
 
-### Do not ignore folder with these names
-!server/
-!client/
+### GoLand ###
+.idea
