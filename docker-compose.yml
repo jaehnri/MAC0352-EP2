@@ -1,6 +1,7 @@
 version: '3.3'
 services:
   db:
+    network_mode: bridge
     image: postgres:14.1-alpine
     restart: always
     environment:
