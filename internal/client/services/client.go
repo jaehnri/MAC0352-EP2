@@ -152,11 +152,11 @@ func (c *ClientService) HandlePlay(params []string) error {
 	if erri != nil || errj != nil {
 		return errors.New("posição inválida")
 	}
-	c.gameRepository.SendPlay(int(i), int(j))
 	err := c.state.game.Play(int(i), int(j))
 	if err != nil {
 		return err
 	}
+	c.gameRepository.SendPlay(int(i), int(j))
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
 	return nil
 }
