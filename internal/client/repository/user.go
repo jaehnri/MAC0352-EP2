@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"ep2/internal/data"
+	"ep2/pkg/model"
 )
 
 const (
@@ -36,16 +36,16 @@ func (u *UserRepository) Logout(name string) {
 	// TODO: Implement logout
 }
 
-func (u *UserRepository) Connected() []data.UserData {
+func (u *UserRepository) Connected() []model.UserData {
 	// TODO: Implement list connected
 	return nil
 }
 
-func (u *UserRepository) All() []data.UserData {
+func (u *UserRepository) All() []model.UserData {
 	// TODO: Implement list all
 	return nil
 }
 
-func (u *UserRepository) Get(username string) (data.UserData, error) {
-	return data.UserData{}, nil
+func (u *UserRepository) Get(username string) (model.UserData, error) {
+	return model.UserData{}, nil
 }

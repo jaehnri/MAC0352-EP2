@@ -3,7 +3,7 @@ package services
 import (
 	"ep2/internal/client/domain/game"
 	"ep2/internal/client/repository"
-	"ep2/internal/services"
+	"ep2/internal/server/services"
 	"errors"
 	"fmt"
 	"net"
