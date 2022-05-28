@@ -20,14 +20,14 @@ type stateStruct struct {
 	game   game.Game
 }
 
-type Client struct {
+type ClientService struct {
 	state       stateStruct
 	userService *repository.UserRepository
 	gameService *repository.GameRepository
 }
 
-func NewClient() *Client {
-	return &Client{
+func NewClientService() *ClientService {
+	return &ClientService{
 		state: stateStruct{
 			isLogged: false,
 			inGame:   false,
@@ -41,7 +41,7 @@ func NewClient() *Client {
 // USER
 // /////////////////////////////////////////////////////////////////////
 
-func (c *Client) HandleNew(params []string) error {
+func (c *ClientService) HandleNew(params []string) error {
 	err := c.userService.Create(params[0], params[1])
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (c *Client) HandleNew(params []string) error {
 	fmt.Println("Usuário criado com sucesso")
 	return nil
 }
-func (c *Client) HandleIn(params []string) error {
+func (c *ClientService) HandleIn(params []string) error {
 	if c.state.isLogged {
 		return errors.New("você já está logado, faça logout para trocar de usuário")
 	}
@@ -65,7 +65,7 @@ func (c *Client) HandleIn(params []string) error {
 	fmt.Printf("Você está logado como '%s'\n", username)
 	return nil
 }
-func (c *Client) HandlePass(params []string) error {
+func (c *ClientService) HandlePass(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
 	}
@@ -76,7 +76,7 @@ func (c *Client) HandlePass(params []string) error {
 	fmt.Println("Sua senha foi alterada.")
 	return nil
 }
-func (c *Client) HandleOut(params []string) error {
+func (c *ClientService) HandleOut(params []string) error {
 	if c.state.inGame {
 		return errors.New("você está em um jogo")
 	}
@@ -88,14 +88,14 @@ func (c *Client) HandleOut(params []string) error {
 	c.state.username = ""
 	return nil
 }
-func (c *Client) HandleL(params []string) error {
+func (c *ClientService) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
 	for _, user := range c.userService.Connected() {
 		fmt.Printf("• %s (%s)", user.Username, user.State)
 	}
 	return nil
 }
-func (c *Client) HandleHalloffame(params []string) error {
+func (c *ClientService) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
 	for i, user := range c.userService.All() {
 		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
@@ -107,7 +107,7 @@ func (c *Client) HandleHalloffame(params []string) error {
 // GAME
 // /////////////////////////////////////////////////////////////////////
 
-func (c *Client) HandleCall(params []string) error {
+func (c *ClientService) HandleCall(params []string) error {
 	if !c.state.inGame {
 		return errors.New("faça login antes de iniciar um jogo")
 	}
@@ -128,7 +128,7 @@ func (c *Client) HandleCall(params []string) error {
 	return nil
 
 }
-func (c *Client) HandlePlay(params []string) error {
+func (c *ClientService) HandlePlay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
@@ -145,14 +145,14 @@ func (c *Client) HandlePlay(params []string) error {
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
 	return nil
 }
-func (c *Client) HandleDelay(params []string) error {
+func (c *ClientService) HandleDelay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
 	fmt.Printf("A latência é de %d millisegundos.\n", c.gameService.Delay)
 	return nil
 }
-func (c *Client) HandleOver(params []string) error {
+func (c *ClientService) HandleOver(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
@@ -163,7 +163,7 @@ func (c *Client) HandleOver(params []string) error {
 	return nil
 }
 
-func (c *Client) HandleTableChanged() {
+func (c *ClientService) HandleTableChanged() {
 	c.state.game.PrintTable()
 	switch c.state.game.State() {
 	case game.Playing:
@@ -184,12 +184,14 @@ func (c *Client) HandleTableChanged() {
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
-func (c *Client) heartbeat() {
+func (c *ClientService) heartbeat() {
 	// TODO: send and receive heartbeats (maximum 3 minutes)
 }
-func (c *Client) listenCalled() {
+
+func (c *ClientService) listenCalled() {
 	// TODO
 }
-func (c *Client) listenOponent() {
+
+func (c *ClientService) listenOponent() {
 	// TODO
 }

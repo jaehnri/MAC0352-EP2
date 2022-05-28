@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
-	"ep2/internal/client"
+	services "ep2/internal/client/services"
 	"fmt"
 	"os"
 	"strings"
 )
 
 func main() {
-	client := client.NewClient()
+	client := services.NewClientService()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Printf("JogoDaVelha> ")
