@@ -1,12 +1,13 @@
-package client
+package services
 
 import (
 	"ep2/internal/client/domain/game"
-	repository "ep2/internal/client/repository"
+	"ep2/internal/client/repository"
 	"ep2/internal/services"
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 )
 
@@ -100,6 +101,14 @@ func (c *ClientService) HandleHalloffame(params []string) error {
 	for i, user := range c.userService.All() {
 		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
 	}
+	return nil
+}
+func (c *ClientService) HandleBye(params []string) error {
+	if c.state.isLogged {
+		return errors.New("você está logado, faça logout antes de sair")
+	}
+	fmt.Printf("Fechando o programa...")
+	os.Exit(0)
 	return nil
 }
 

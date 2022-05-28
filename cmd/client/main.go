@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	services "ep2/internal/client/services"
+	"ep2/internal/client/services"
 	"fmt"
 	"os"
 	"strings"

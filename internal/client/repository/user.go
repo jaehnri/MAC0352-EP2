@@ -1,4 +1,4 @@
-package services
+package repository
 
 import (
 	"ep2/internal/data"
