@@ -1,7 +1,7 @@
 package router
 
 import (
-	"ep2/internal/services"
+	"ep2/internal/server/services"
 	"fmt"
 	"strings"
 )

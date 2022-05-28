@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ep2/internal/servers"
+	"ep2/internal/server/servers"
 )
 
 func main() {

@@ -2,7 +2,7 @@ package servers
 
 import (
 	"bytes"
-	"ep2/internal/router"
+	"ep2/internal/server/router"
 	"fmt"
 	"net"
 	"os"

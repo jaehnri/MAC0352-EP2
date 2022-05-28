@@ -1,8 +1,8 @@
 package services
 
 import (
-	"ep2/internal/data"
-	"ep2/internal/repository"
+	"ep2/internal/server/repository"
+	"ep2/pkg/model"
 	"fmt"
 )
 
@@ -53,16 +53,16 @@ func (u *UserService) Logout(name string) {
 	// TODO: Implement logout
 }
 
-func (u *UserService) ListConnected() []data.UserData {
+func (u *UserService) ListConnected() []model.UserData {
 	// TODO: Implement list connected
 	return nil
 }
 
-func (u *UserService) ListAll() []data.UserData {
+func (u *UserService) ListAll() []model.UserData {
 	// TODO: Implement list all
 	return nil
 }
 
-func (u *UserService) Get(username string) (data.UserData, error) {
-	return data.UserData{}, nil
+func (u *UserService) Get(username string) (model.UserData, error) {
+	return model.UserData{}, nil
 }
