@@ -11,13 +11,27 @@ import (
 
 func main() {
 	clientService := services.NewClientService()
-	scanner := bufio.NewScanner(os.Stdin)
 	router := client.NewRouter()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	readTerminal := make(chan string)
+	go concurrentlyReadLine(scanner, readTerminal)
+
 	for {
 		fmt.Printf("JogoDaVelha> ")
+		select {
+		case line := <-readTerminal:
+			handleError(router.Route(line, clientService))
+		case line := <-clientService.AlternateListenTo():
+			handleError(router.Route(line, clientService))
+		}
+	}
+}
+
+func concurrentlyReadLine(scanner *bufio.Scanner, read chan string) {
+	for {
 		scanner.Scan()
-		line := strings.TrimSpace(scanner.Text())
-		handleError(router.Route(line, clientService))
+		read <- strings.TrimSpace(scanner.Text())
 	}
 }
 

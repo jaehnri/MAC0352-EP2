@@ -19,8 +19,10 @@ type RouteMethods interface {
 	HandleHalloffame(params []string) error
 	HandleCall(params []string) error
 	HandlePlay(params []string) error
+	HandlePlayed(params []string) error
 	HandleDelay(params []string) error
 	HandleOver(params []string) error
+	HandleOvered(params []string) error
 	HandleBye(params []string) error
 	HandleHelp(params []string) error
 }
@@ -62,6 +64,12 @@ func (r *Router) Route(line string, methods RouteMethods) error {
 		return methods.HandleDelay(params)
 	case "over":
 		return methods.HandleOver(params)
+
+	// GAME FROM OPONENT
+	case "played":
+		return methods.HandlePlayed(params)
+	case "overed":
+		return methods.HandleOvered(params)
 
 	// OTHER
 	case "bye":

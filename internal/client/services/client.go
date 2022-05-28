@@ -17,10 +17,11 @@ type stateStruct struct {
 	isLogged bool
 	username string
 	// connection
-	inGame       bool
-	conn         net.Conn
-	game         game.Game
-	quitHearbeat chan int
+	inGame         bool
+	conn           net.Conn
+	game           game.Game
+	quitHearbeat   chan int
+	oponentChannel chan string
 }
 
 type ClientService struct {
@@ -33,8 +34,9 @@ type ClientService struct {
 func NewClientService() *ClientService {
 	return &ClientService{
 		state: stateStruct{
-			isLogged: false,
-			inGame:   false,
+			isLogged:       false,
+			inGame:         false,
+			oponentChannel: make(chan string),
 		},
 		userRepository:      repository.NewUserRepository(),
 		gameRepository:      repository.NewGameRepository(),
@@ -63,7 +65,7 @@ func (c *ClientService) HandleIn(params []string) error {
 	if err != nil {
 		return err
 	}
-	go c.listenCalled()
+	go c.listenOponent()
 	c.state.quitHearbeat = make(chan int)
 	go c.heartbeat(c.state.quitHearbeat)
 	c.state.isLogged = true
@@ -149,8 +151,25 @@ func (c *ClientService) HandlePlay(params []string) error {
 		return err
 	}
 	c.handleTableChanged()
-	c.gameRepository.SendPlay(int(i), int(j))
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
+	c.gameRepository.SendPlay(int(i), int(j))
+	return nil
+}
+func (c *ClientService) HandlePlayed(params []string) error {
+	if !c.state.inGame {
+		return nil
+	}
+	i, erri := strconv.ParseInt(params[0], 10, 32)
+	j, errj := strconv.ParseInt(params[1], 10, 32)
+	if erri != nil || errj != nil {
+		return errors.New("posição inválida")
+	}
+	err := c.state.game.OponentPlayed(int(i), int(j))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("O oponente jogou em (%d,%d).\n", i, j)
+	c.handleTableChanged()
 	return nil
 }
 func (c *ClientService) HandleDelay(params []string) error {
@@ -164,10 +183,20 @@ func (c *ClientService) HandleOver(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
-	c.gameRepository.SendDraw(c.state.username)
 	c.gameRepository.Disconnect(c.state.conn)
 	c.state.inGame = false
 	c.state.conn = nil
+	fmt.Println("Você se disconectou do jogo.")
+	return nil
+}
+func (c *ClientService) HandleOvered(params []string) error {
+	if !c.state.inGame {
+		return nil
+	}
+	c.gameRepository.Disconnect(c.state.conn)
+	c.state.inGame = false
+	c.state.conn = nil
+	fmt.Println("O oponente se disconectou do jogo.")
 	return nil
 }
 
@@ -217,6 +246,14 @@ func (c *ClientService) HandleBye(params []string) error {
 }
 
 // /////////////////////////////////////////////////////////////////////
+// ALTERNATE
+// /////////////////////////////////////////////////////////////////////
+
+func (c *ClientService) AlternateListenTo() chan string {
+	return c.state.oponentChannel
+}
+
+// /////////////////////////////////////////////////////////////////////
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
@@ -233,10 +270,6 @@ func (c *ClientService) heartbeat(quit chan int) {
 			return
 		}
 	}
-}
-
-func (c *ClientService) listenCalled() {
-	// TODO
 }
 
 func (c *ClientService) listenOponent() {

@@ -81,7 +81,7 @@ func (g Game) Play(i int, j int) error {
 	return g.play(i, j, g.User)
 }
 
-func (g Game) OponentPlayed(i int, j int, user string) error {
+func (g Game) OponentPlayed(i int, j int) error {
 	return g.play(i, j, g.Oponent)
 }
 
