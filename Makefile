@@ -12,3 +12,9 @@ run-client:
 
 test:
 	go test ./...
+
+run:
+	docker-compose up -d
+
+shutdown:
+	docker-compose down --remove-orphans
