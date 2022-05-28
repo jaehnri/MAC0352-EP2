@@ -1,7 +1,8 @@
 package client
 
 import (
-	"ep2/internal/game"
+	"ep2/internal/client/domain/game"
+	repository "ep2/internal/client/repository"
 	"ep2/internal/services"
 	"errors"
 	"fmt"
@@ -21,18 +22,18 @@ type stateStruct struct {
 
 type Client struct {
 	state       stateStruct
-	userService services.UserService
-	gameService services.GameService
+	userService *repository.UserRepository
+	gameService *repository.GameRepository
 }
 
-func NewClient() Client {
-	return Client{
+func NewClient() *Client {
+	return &Client{
 		state: stateStruct{
 			isLogged: false,
 			inGame:   false,
 		},
-		userService: *services.NewUserService(),
-		gameService: *services.NewGameService(),
+		userService: repository.NewUserRepository(),
+		gameService: repository.NewGameRepository(),
 	}
 }
 
@@ -41,13 +42,7 @@ func NewClient() Client {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *Client) HandleNew(params []string) error {
-	// TODO:
-	// port, errPort := strconv.ParseInt(params[0], 10, 32)
-	// if errPort != nil {
-	// 	return errPort
-	// }
-	// err := c.userService.Create(params[0], port)
-	err := c.userService.Create(params)
+	err := c.userService.Create(params[0], params[1])
 	if err != nil {
 		return err
 	}
@@ -95,14 +90,14 @@ func (c *Client) HandleOut(params []string) error {
 }
 func (c *Client) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
-	for _, user := range c.userService.ListConnected() {
+	for _, user := range c.userService.Connected() {
 		fmt.Printf("• %s (%s)", user.Username, user.State)
 	}
 	return nil
 }
 func (c *Client) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
-	for i, user := range c.userService.ListConnected() {
+	for i, user := range c.userService.All() {
 		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
 	}
 	return nil
