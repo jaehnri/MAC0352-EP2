@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 type stateStruct struct {
@@ -16,15 +17,17 @@ type stateStruct struct {
 	isLogged bool
 	username string
 	// connection
-	inGame bool
-	conn   net.Conn
-	game   game.Game
+	inGame       bool
+	conn         net.Conn
+	game         game.Game
+	quitHearbeat chan int
 }
 
 type ClientService struct {
-	state       stateStruct
-	userService *repository.UserRepository
-	gameService *repository.GameRepository
+	state               stateStruct
+	userRepository      *repository.UserRepository
+	gameRepository      *repository.GameRepository
+	heartbeatRepository *repository.HeartbeatRepository
 }
 
 func NewClientService() *ClientService {
@@ -33,8 +36,9 @@ func NewClientService() *ClientService {
 			isLogged: false,
 			inGame:   false,
 		},
-		userService: repository.NewUserRepository(),
-		gameService: repository.NewGameRepository(),
+		userRepository:      repository.NewUserRepository(),
+		gameRepository:      repository.NewGameRepository(),
+		heartbeatRepository: repository.NewHeartbeatRepository(),
 	}
 }
 
@@ -43,7 +47,7 @@ func NewClientService() *ClientService {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleNew(params []string) error {
-	err := c.userService.Create(params[0], params[1])
+	err := c.userRepository.Create(params[0], params[1])
 	if err != nil {
 		return err
 	}
@@ -55,12 +59,13 @@ func (c *ClientService) HandleIn(params []string) error {
 		return errors.New("você já está logado, faça logout para trocar de usuário")
 	}
 	username := params[0]
-	err := c.userService.Login(username, params[1])
+	err := c.userRepository.Login(username, params[1])
 	if err != nil {
 		return err
 	}
 	go c.listenCalled()
-	go c.heartbeat()
+	c.state.quitHearbeat = make(chan int)
+	go c.heartbeat(c.state.quitHearbeat)
 	c.state.isLogged = true
 	c.state.username = username
 	fmt.Printf("Você está logado como '%s'\n", username)
@@ -70,7 +75,7 @@ func (c *ClientService) HandlePass(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
 	}
-	err := c.userService.ChangePassword(c.state.username, params[0], params[1])
+	err := c.userRepository.ChangePassword(c.state.username, params[0], params[1])
 	if err != nil {
 		return err
 	}
@@ -84,21 +89,22 @@ func (c *ClientService) HandleOut(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
 	}
-	c.userService.Logout(c.state.username)
+	c.state.quitHearbeat <- 0
+	c.userRepository.Logout(c.state.username)
 	c.state.isLogged = false
 	c.state.username = ""
 	return nil
 }
 func (c *ClientService) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
-	for _, user := range c.userService.Connected() {
+	for _, user := range c.userRepository.Connected() {
 		fmt.Printf("• %s (%s)", user.Username, user.State)
 	}
 	return nil
 }
 func (c *ClientService) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
-	for i, user := range c.userService.All() {
+	for i, user := range c.userRepository.All() {
 		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
 	}
 	return nil
@@ -120,14 +126,14 @@ func (c *ClientService) HandleCall(params []string) error {
 	if !c.state.inGame {
 		return errors.New("faça login antes de iniciar um jogo")
 	}
-	user, err := c.userService.Get(params[0])
+	user, err := c.userRepository.Get(params[0])
 	if err != nil {
 		return err
 	}
 	if user.State != services.Available {
 		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
 	}
-	c.state.conn, err = c.gameService.Connect(user.ConnectedIp, user.ConnectedPort)
+	c.state.conn, err = c.gameRepository.Connect(user.ConnectedIp, user.ConnectedPort)
 	if err != nil {
 		return err
 	}
@@ -146,7 +152,7 @@ func (c *ClientService) HandlePlay(params []string) error {
 	if erri != nil || errj != nil {
 		return errors.New("posição inválida")
 	}
-	c.gameService.SendPlay(int(i), int(j))
+	c.gameRepository.SendPlay(int(i), int(j))
 	err := c.state.game.Play(int(i), int(j))
 	if err != nil {
 		return err
@@ -158,15 +164,15 @@ func (c *ClientService) HandleDelay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
-	fmt.Printf("A latência é de %d millisegundos.\n", c.gameService.Delay)
+	fmt.Printf("A latência é de %d millisegundos.\n", c.gameRepository.Delay)
 	return nil
 }
 func (c *ClientService) HandleOver(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
 	}
-	c.gameService.SendDraw(c.state.username)
-	c.gameService.Disconnect(c.state.conn)
+	c.gameRepository.SendDraw(c.state.username)
+	c.gameRepository.Disconnect(c.state.conn)
 	c.state.inGame = false
 	c.state.conn = nil
 	return nil
@@ -179,22 +185,33 @@ func (c *ClientService) HandleTableChanged() {
 		return
 	case game.Won:
 		fmt.Println("Você ganhou!")
-		c.gameService.SendWon(c.state.username)
+		c.gameRepository.SendWon(c.state.username)
 	case game.Draw:
 		fmt.Println("Deu velha...")
-		c.gameService.SendDraw(c.state.username)
+		c.gameRepository.SendDraw(c.state.username)
 	case game.Lost:
 		fmt.Println("Você perdeu...")
 	}
-	c.gameService.Disconnect(c.state.conn)
+	c.gameRepository.Disconnect(c.state.conn)
 }
 
 // /////////////////////////////////////////////////////////////////////
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
-func (c *ClientService) heartbeat() {
-	// TODO: send and receive heartbeats (maximum 3 minutes)
+const heartbeatPeriod = 8 * time.Second
+
+func (c *ClientService) heartbeat(quit chan int) {
+	for {
+		select {
+		case <-time.After(heartbeatPeriod):
+			// TODO: send and receive heartbeats (maximum 3 minutes)
+			fmt.Println("\nHeartbeat...")
+			c.heartbeatRepository.Send(c.state.username)
+		case <-quit:
+			return
+		}
+	}
 }
 
 func (c *ClientService) listenCalled() {
