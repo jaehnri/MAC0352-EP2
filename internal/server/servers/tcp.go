@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ConnHost       = "localhost"
+	ConnHost       = "172.17.0.3"
 	ConnPort       = "8080"
 	ConnType       = "tcp"
 	MaxPayloadSize = 2048
@@ -29,18 +29,18 @@ func (tcp *TCPServer) StartTCPServer() {
 	// Listen for incoming connections.
 	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
 	if err != nil {
-		fmt.Println("Error listening:", err.Error())
+		fmt.Println("Erro ao iniciar escuta:", err.Error())
 		os.Exit(1)
 	}
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	fmt.Println("Listening on " + ConnHost + ":" + ConnPort)
+	fmt.Println("Escutando em " + ConnHost + ":" + ConnPort)
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
 		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
+			fmt.Println("Houve um erro ao aceitar: ", err.Error())
 			os.Exit(1)
 		}
 		// Handle connections in a new goroutine.
@@ -55,7 +55,7 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 	// Read the incoming connection into the buffer.
 	qtdBytesRead, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println("Error reading:", err.Error())
+		fmt.Println("Houve um erro ao ler um payload:", err.Error())
 	}
 
 	payload := parseTCPPayload(buf, qtdBytesRead)
