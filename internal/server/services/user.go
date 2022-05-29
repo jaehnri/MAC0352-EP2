@@ -12,15 +12,6 @@ const (
 	Playing   = "online-playing"
 )
 
-type User interface {
-	Create(name string, password string)
-	ChangePassword(name string, password string)
-	Login(name string)
-	Logout(name string)
-	ListConnected()
-	ListAll()
-}
-
 type UserService struct {
 	repository *repository.UserRepository
 }
@@ -39,9 +30,25 @@ func (u *UserService) Create(args []string) error {
 	return u.repository.Create(args[0], args[1])
 }
 
-func (u *UserService) ChangePassword(name string, oldpassword, newpassword string) error {
-	// TODO: Implement password change
-	return nil
+func (u *UserService) ChangePassword(args []string) error {
+	if len(args) != 3 {
+		return fmt.Errorf("ERRO: formato esperado é: pass <user> <senha antiga> <senha nova>.\n")
+	}
+
+	user := args[0]
+	currentPassword := args[1]
+	newPassword := args[2]
+
+	currentPasswordFromDatabase, err := u.repository.GetOldPassword(user)
+	if err != nil {
+		return err
+	}
+
+	if currentPasswordFromDatabase != currentPassword {
+		return fmt.Errorf("ERRO: Usuário %s tentou alterar a sua senha mas errou a senha atual.\n", user)
+	}
+
+	return u.repository.ChangePassword(user, newPassword)
 }
 
 func (u *UserService) Login(name string, password string) error {
