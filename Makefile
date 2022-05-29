@@ -14,7 +14,7 @@ test:
 	go test ./...
 
 run:
-	docker-compose up -d
+	docker-compose up -d --build
 
 shutdown:
-	docker-compose down --remove-orphans
+	docker-compose down --remove-orphans --rmi local
