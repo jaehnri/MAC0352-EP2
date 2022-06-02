@@ -4,6 +4,7 @@ import (
 	"ep2/internal/server/repository"
 	"ep2/pkg/model"
 	"fmt"
+	"strconv"
 )
 
 const (
@@ -39,7 +40,7 @@ func (u *UserService) ChangePassword(args []string) error {
 	currentPassword := args[1]
 	newPassword := args[2]
 
-	currentPasswordFromDatabase, err := u.repository.GetOldPassword(user)
+	currentPasswordFromDatabase, err := u.repository.GetCurrentPassword(user)
 	if err != nil {
 		return err
 	}
@@ -51,25 +52,113 @@ func (u *UserService) ChangePassword(args []string) error {
 	return u.repository.ChangePassword(user, newPassword)
 }
 
-func (u *UserService) Login(name string, password string) error {
-	// TODO: Implement login
+func (u *UserService) Login(args []string, address string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("ERRO: formato esperado é: in <user> <senha>.\n")
+	}
+
+	name := args[0]
+	password := args[1]
+
+	currentPasswordFromDatabase, err := u.repository.GetCurrentPassword(name)
+	if err != nil {
+		return err
+	}
+
+	if currentPasswordFromDatabase != password {
+		return fmt.Errorf("ERRO: Usuário <%s> errou a senha.\n", name)
+	}
+
+	err = u.repository.ChangeStatus(name, address, Available)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *UserService) Logout(name string) {
-	// TODO: Implement logout
-}
+func (u *UserService) Logout(args []string, address string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("ERRO: formato esperado é: out <user>.\n")
+	}
+	name := args[0]
 
-func (u *UserService) ListConnected() []model.UserData {
-	// TODO: Implement list connected
+	err := u.repository.ChangeStatus(name, address, Offline)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *UserService) ListAll() []model.UserData {
-	// TODO: Implement list all
+func (u *UserService) GetHallOfFame() ([]model.UserData, error) {
+	return u.repository.HallOfFame()
+}
+
+func (u *UserService) GetOnlineUsers() ([]model.UserData, error) {
+	return u.repository.GetOnlineUsers()
+}
+
+func (u *UserService) Play(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("ERRO: formato esperado é: play <user1> <user2>.\n")
+	}
+	user1 := args[0]
+	user2 := args[1]
+
+	return u.repository.Play(user1, user2, Playing)
+}
+
+func (u *UserService) Over(args []string) error {
+	if len(args) != 4 {
+		return fmt.Errorf("ERRO: formato esperado é: over <user1> <points1> <user2> <points2>.'\n")
+	}
+
+	user1 := args[0]
+	user2 := args[2]
+	pointsUser1, err := strconv.Atoi(args[1])
+	if err != nil {
+		fmt.Printf("ERRO: formato esperado de <points1> é inteiro.")
+		return err
+	}
+	pointsUser2, err := strconv.Atoi(args[3])
+	if err != nil {
+		fmt.Printf("ERRO: formato esperado de <points2> é inteiro.")
+		return err
+	}
+
+	err = u.repository.UpdatePoints(user1, pointsUser1)
+	if err != nil {
+		return err
+	}
+	err = u.repository.UpdatePoints(user2, pointsUser2)
+	if err != nil {
+		return err
+	}
+
+	err = u.repository.ChangeStatusWithoutAddress(user1, Available)
+	if err != nil {
+		return err
+	}
+	err = u.repository.ChangeStatusWithoutAddress(user1, Available)
+	if err != nil {
+		return err
+	}
+
+	printWinner(user1, user2, pointsUser1, pointsUser2)
 	return nil
 }
 
-func (u *UserService) Get(username string) (model.UserData, error) {
-	return model.UserData{}, nil
+func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
+	if pointsUser1 > pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user1)
+	}
+
+	if pointsUser1 < pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user2)
+	}
+
+	if pointsUser1 == pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou em empate.\n", user1, user2)
+	}
 }

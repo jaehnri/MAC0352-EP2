@@ -1,7 +1,7 @@
 package servers
 
 import (
-	"bytes"
+	"bufio"
 	"ep2/internal/server/router"
 	"fmt"
 	"net"
@@ -43,34 +43,43 @@ func (tcp *TCPServer) StartTCPServer() {
 			fmt.Println("Houve um erro ao aceitar: ", err.Error())
 			os.Exit(1)
 		}
+
+		fmt.Printf("Conexão TCP iniciada com %s!", conn.RemoteAddr().String())
 		// Handle connections in a new goroutine.
 		go tcp.handleRequest(conn)
 	}
 }
 
 func (tcp *TCPServer) handleRequest(conn net.Conn) {
-	// Make a buffer to hold incoming data.
-	buf := make([]byte, MaxPayloadSize)
+	for {
+		// Read the incoming data into a variable.
+		netData, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			fmt.Println("Houve um erro ao ler um payload: ", err.Error())
+			break
+		}
 
-	// Read the incoming connection into the buffer.
-	qtdBytesRead, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println("Houve um erro ao ler um payload:", err.Error())
+		payload := parseTCPPayload(netData)
+		response := tcp.Router.Route(payload, conn.RemoteAddr().String())
+
+		// Check if connection should end.
+		if shouldCloseTheConnection(response) {
+			break
+		}
+
+		// Send a response back to client.
+		conn.Write([]byte(response))
 	}
-
-	payload := parseTCPPayload(buf, qtdBytesRead)
-	response := tcp.Router.Route(payload)
-
-	// Send a response back to client.
-	conn.Write([]byte(response))
 
 	// Close the TCP connection.
 	conn.Close()
 }
 
-// Buf is always initialized as an array of 2048 bytes. However, most packets are sent with less than that.
-// Here, we trim the byte array to use only how many bytes were actually read by conn.Read()
-// and we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).
-func parseTCPPayload(buf []byte, qtdBytesRead int) string {
-	return bytes.NewBuffer(buf).String()[:qtdBytesRead-2]
+// Here, we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).
+func parseTCPPayload(buf string) string {
+	return buf[:len(buf)-2]
+}
+
+func shouldCloseTheConnection(response string) bool {
+	return response == "BYE"
 }
