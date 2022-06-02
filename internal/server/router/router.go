@@ -20,6 +20,7 @@ type ServerRouter interface {
 	HandleL() string
 	HandlePlay(params []string) string
 	HandleOver(params []string) string
+	HandleBye() string
 }
 
 func NewRouter() *Router {
@@ -57,6 +58,9 @@ func (r *Router) Route(packet string, address string) string {
 
 	case "over":
 		return r.HandleOver(args)
+
+	case "bye":
+		return r.HandleBye()
 
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
@@ -134,4 +138,8 @@ func (r *Router) HandleOver(params []string) string {
 	}
 
 	return "OK"
+}
+
+func (r *Router) HandleBye() string {
+	return "BYE"
 }
