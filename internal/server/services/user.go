@@ -136,5 +136,20 @@ func (u *UserService) Over(args []string) error {
 		return err
 	}
 
+	printWinner(user1, user2, pointsUser1, pointsUser2)
 	return nil
+}
+
+func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
+	if pointsUser1 > pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user1)
+	}
+
+	if pointsUser1 < pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user2)
+	}
+
+	if pointsUser1 == pointsUser2 {
+		fmt.Printf("A partida entre <%s> e <%s> encerrou em empate.\n", user1, user2)
+	}
 }

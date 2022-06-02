@@ -109,9 +109,9 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 }
 
 func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
-	listOnlineQuery := "SELECT name, address, status FROM players " +
-		"WHERE status in ('online-available', 'online-playing') " +
-		"ORDER BY status;"
+	listOnlineQuery := "SELECT name, address, state FROM players " +
+		"WHERE state in ('online-available', 'online-playing') " +
+		"ORDER BY state;"
 	rows, err := r.db.Query(listOnlineQuery)
 	if err != nil {
 		fmt.Printf("Algo de errado ocorreu ao recuperar os usuários online do banco: %s", err.Error())
@@ -149,7 +149,7 @@ func (r *UserRepository) ChangePassword(name string, password string) error {
 
 func (r *UserRepository) Play(name1 string, name2 string, status string) error {
 	playQuery := "UPDATE players " +
-		"SET status = $1 " +
+		"SET state = $1 " +
 		"WHERE name in ($2, $3)"
 	_, err := r.db.Exec(playQuery, status, name1, name2)
 	if err != nil {

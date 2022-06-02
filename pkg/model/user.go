@@ -24,7 +24,7 @@ func PrintHallOfFame(users []UserData) string {
 func PrintOnlineUsers(users []UserData) string {
 	var sb strings.Builder
 	for _, user := range users {
-		sb.Write([]byte(user.Username + ": " + user.Address + " - " + user.State))
+		sb.Write([]byte(user.Username + ": " + user.Address + " - " + user.State + "\n"))
 	}
 
 	return sb.String()
