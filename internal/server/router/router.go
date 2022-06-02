@@ -18,9 +18,8 @@ type ServerRouter interface {
 	HandleOut(params []string, address string) string
 	HandleHallOfFame() string
 	HandleL() string
-	//HandlePlay(params []string) error
-	//HandleCall(params []string) error
-	//HandleOver(params []string) error
+	HandlePlay(params []string) string
+	HandleOver(params []string) string
 }
 
 func NewRouter() *Router {
@@ -52,6 +51,9 @@ func (r *Router) Route(packet string, address string) string {
 
 	case "l":
 		return r.HandleL()
+
+	case "play":
+		return r.HandlePlay(args)
 
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
@@ -111,4 +113,13 @@ func (r *Router) HandleL() string {
 	}
 
 	return model.PrintOnlineUsers(users)
+}
+
+func (r *Router) HandlePlay(params []string) string {
+	err := r.userService.Play(params)
+	if err != nil {
+		return err.Error()
+	}
+
+	return "OK"
 }

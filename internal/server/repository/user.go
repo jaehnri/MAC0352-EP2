@@ -146,3 +146,18 @@ func (r *UserRepository) ChangePassword(name string, password string) error {
 	fmt.Printf("A senha do usuário <%s> foi atualizada.\n", name)
 	return nil
 }
+
+func (r *UserRepository) Play(name1 string, name2 string, status string) error {
+	changePasswordQuery := "UPDATE players " +
+		"SET status = $1 " +
+		"WHERE name in ($2, $3)"
+	_, err := r.db.Exec(changePasswordQuery, status, name1, name2)
+	if err != nil {
+		fmt.Printf("Algo de errado aconteceu ao atualizar o status dos jogadores <%s> e <%s>: %s\n",
+			name1, name2, err.Error())
+		return err
+	}
+
+	fmt.Printf("Os usuários <%s> e <%s> iniciaram uma partida!\n", name1, name2)
+	return nil
+}

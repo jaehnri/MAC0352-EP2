@@ -98,16 +98,12 @@ func (u *UserService) GetOnlineUsers() ([]model.UserData, error) {
 	return u.repository.GetOnlineUsers()
 }
 
-func (u *UserService) ListConnected() []model.UserData {
-	// TODO: Implement list connected
-	return nil
-}
+func (u *UserService) Play(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("ERRO: formato esperado é: play <user1> <user2>.\n")
+	}
+	user1 := args[0]
+	user2 := args[1]
 
-func (u *UserService) ListAll() []model.UserData {
-	// TODO: Implement list all
-	return nil
-}
-
-func (u *UserService) Get(username string) (model.UserData, error) {
-	return model.UserData{}, nil
+	return u.repository.Play(user1, user2, Playing)
 }
