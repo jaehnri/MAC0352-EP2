@@ -16,5 +16,10 @@ test:
 run:
 	docker-compose up -d --build
 
+restart: shutdown run
+
 shutdown:
 	docker-compose down --remove-orphans --rmi local
+
+remove-all:
+	docker-compose down --remove-orphans --rmi local --volumes
