@@ -59,7 +59,7 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 	}
 
 	payload := parseTCPPayload(buf, qtdBytesRead)
-	response := tcp.Router.Route(payload)
+	response := tcp.Router.Route(payload, conn.RemoteAddr().String())
 
 	// Send a response back to client.
 	conn.Write([]byte(response))

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"ep2/pkg/model"
 	"fmt"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -45,7 +46,24 @@ func (r *UserRepository) Create(name string, password string) error {
 	return nil
 }
 
-func (r *UserRepository) GetOldPassword(name string) (string, error) {
+func (r *UserRepository) ChangeStatus(name string, address string, status string) error {
+	loginQuery :=
+		"UPDATE players " +
+			" SET state   = $1, " +
+			"     address = $2 " +
+			"WHERE name   = $3 "
+
+	_, err := r.db.Exec(loginQuery, status, address, name)
+	if err != nil {
+		fmt.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
+		return err
+	}
+
+	fmt.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
+	return nil
+}
+
+func (r *UserRepository) GetCurrentPassword(name string) (string, error) {
 	var currentPassword string
 
 	getOldPasswordQuery := "SELECT password FROM players " +
@@ -64,6 +82,30 @@ func (r *UserRepository) GetOldPassword(name string) (string, error) {
 	}
 
 	return currentPassword, nil
+}
+
+func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
+	hallOfFameQuery := "SELECT name, points FROM players " +
+		"ORDER BY points DESC;"
+	rows, err := r.db.Query(hallOfFameQuery)
+	if err != nil {
+		fmt.Printf("Algo de errado ocorreu ao recuperar o Hall of fame do banco: %s", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.UserData
+	for rows.Next() {
+		var u model.UserData
+		err := rows.Scan(&u.Username, &u.Points)
+		if err != nil {
+			fmt.Printf("Algo de errado ocorreu ao escanear as linhas do Hall of Fame: %s", err.Error())
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
 }
 
 func (r *UserRepository) ChangePassword(name string, password string) error {

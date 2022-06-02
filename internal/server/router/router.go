@@ -2,6 +2,7 @@ package router
 
 import (
 	"ep2/internal/server/services"
+	"ep2/pkg/model"
 	"fmt"
 	"strings"
 )
@@ -13,11 +14,11 @@ type Router struct {
 type ServerRouter interface {
 	HandleNew(params []string) string
 	HandlePass(params []string) string
-	//HandleIn(params []string) error
-	//HandleOut(params []string) error
+	HandleIn(params []string, address string) string
+	HandleOut(params []string, address string) string
+	HandleHallOfFame() string
 	//HandleL(params []string) error
 	//HandlePlay(params []string) error
-	//HandleHallOfFame(params []string) error
 	//HandleCall(params []string) error
 	//HandleOver(params []string) error
 }
@@ -28,7 +29,7 @@ func NewRouter() *Router {
 	}
 }
 
-func (r *Router) Route(packet string) string {
+func (r *Router) Route(packet string, address string) string {
 	splitPacket := strings.Split(packet, " ")
 	command := splitPacket[0]
 	args := splitPacket[1:]
@@ -39,6 +40,15 @@ func (r *Router) Route(packet string) string {
 
 	case "pass":
 		return r.HandlePass(args)
+
+	case "in":
+		return r.HandleIn(args, address)
+
+	case "out":
+		return r.HandleOut(args, address)
+
+	case "halloffame":
+		return r.HandleHallOfFame()
 
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
@@ -62,4 +72,31 @@ func (r *Router) HandlePass(params []string) string {
 	}
 
 	return "OK"
+}
+
+func (r *Router) HandleIn(params []string, address string) string {
+	err := r.userService.Login(params, address)
+	if err != nil {
+		return err.Error()
+	}
+
+	return "OK"
+}
+
+func (r *Router) HandleOut(params []string, address string) string {
+	err := r.userService.Logout(params, address)
+	if err != nil {
+		return err.Error()
+	}
+
+	return "OK"
+}
+
+func (r *Router) HandleHallOfFame() string {
+	users, err := r.userService.GetHallOfFame()
+	if err != nil {
+		return err.Error()
+	}
+
+	return model.PrintHallOfFame(users)
 }

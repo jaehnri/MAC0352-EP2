@@ -39,7 +39,7 @@ func (u *UserService) ChangePassword(args []string) error {
 	currentPassword := args[1]
 	newPassword := args[2]
 
-	currentPasswordFromDatabase, err := u.repository.GetOldPassword(user)
+	currentPasswordFromDatabase, err := u.repository.GetCurrentPassword(user)
 	if err != nil {
 		return err
 	}
@@ -51,13 +51,47 @@ func (u *UserService) ChangePassword(args []string) error {
 	return u.repository.ChangePassword(user, newPassword)
 }
 
-func (u *UserService) Login(name string, password string) error {
-	// TODO: Implement login
+func (u *UserService) Login(args []string, address string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("ERRO: formato esperado é: in <user> <senha>.\n")
+	}
+
+	name := args[0]
+	password := args[1]
+
+	currentPasswordFromDatabase, err := u.repository.GetCurrentPassword(name)
+	if err != nil {
+		return err
+	}
+
+	if currentPasswordFromDatabase != password {
+		return fmt.Errorf("ERRO: Usuário <%s> errou a senha.\n", name)
+	}
+
+	err = u.repository.ChangeStatus(name, address, Available)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *UserService) Logout(name string) {
-	// TODO: Implement logout
+func (u *UserService) Logout(args []string, address string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("ERRO: formato esperado é: out <user>.\n")
+	}
+	name := args[0]
+
+	err := u.repository.ChangeStatus(name, address, Offline)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserService) GetHallOfFame() ([]model.UserData, error) {
+	return u.repository.HallOfFame()
 }
 
 func (u *UserService) ListConnected() []model.UserData {
