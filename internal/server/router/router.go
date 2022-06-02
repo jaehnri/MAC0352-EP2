@@ -1,8 +1,8 @@
 package router
 
 import (
+	"encoding/json"
 	"ep2/internal/server/services"
-	"ep2/pkg/model"
 	"fmt"
 	"strings"
 )
@@ -110,7 +110,8 @@ func (r *Router) HandleHallOfFame() string {
 		return err.Error()
 	}
 
-	return model.PrintHallOfFame(users)
+	jsonResponse, err := json.Marshal(users)
+	return string(jsonResponse)
 }
 
 func (r *Router) HandleL() string {
@@ -119,7 +120,8 @@ func (r *Router) HandleL() string {
 		return err.Error()
 	}
 
-	return model.PrintOnlineUsers(users)
+	jsonResponse, err := json.Marshal(users)
+	return string(jsonResponse)
 }
 
 func (r *Router) HandlePlay(params []string) string {
