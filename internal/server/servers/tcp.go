@@ -43,6 +43,8 @@ func (tcp *TCPServer) StartTCPServer() {
 			fmt.Println("Houve um erro ao aceitar: ", err.Error())
 			os.Exit(1)
 		}
+
+		fmt.Printf("Conexão TCP iniciada com %s!", conn.RemoteAddr().String())
 		// Handle connections in a new goroutine.
 		go tcp.handleRequest(conn)
 	}
