@@ -55,11 +55,8 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 		// Read the incoming data into a variable.
 		netData, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err != nil {
 			fmt.Println("Houve um erro ao ler um payload: ", err.Error())
+			break
 		}
 
 		payload := parseTCPPayload(netData)
