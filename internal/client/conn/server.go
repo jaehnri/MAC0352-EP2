@@ -53,6 +53,10 @@ func (c ServerConnection) SendWon(username string) error {
 	return c.send(fmt.Sprintf("won %s", username))
 }
 
+func (c ServerConnection) ReadHeartbeat() (string, error) {
+	return c.read()
+}
+
 func (c ServerConnection) SendDraw(username string) error {
 	return c.send(fmt.Sprintf("draw %s", username))
 }

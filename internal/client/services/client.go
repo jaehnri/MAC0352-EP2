@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ep2/internal"
 	"ep2/internal/client/conn"
 	"ep2/internal/client/domain/game"
 	"ep2/internal/server/services"
@@ -29,7 +30,7 @@ type ClientService struct {
 }
 
 func NewClientService(serverConn *conn.ServerConnection) *ClientService {
-	return &ClientService{
+	c := &ClientService{
 		state: stateStruct{
 			isLogged:       false,
 			inGame:         false,
@@ -37,6 +38,8 @@ func NewClientService(serverConn *conn.ServerConnection) *ClientService {
 		},
 		serverConn: serverConn,
 	}
+	go c.receiveHeartbeat()
+	return c
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -62,7 +65,7 @@ func (c *ClientService) HandleIn(params []string) error {
 	}
 	go c.listenOponent()
 	c.state.quitHearbeat = make(chan int)
-	go c.heartbeat(c.state.quitHearbeat)
+	go c.sendHeartbeat(c.state.quitHearbeat)
 	c.state.isLogged = true
 	c.state.username = username
 	fmt.Printf("Você está logado como '%s'\n", username)
@@ -264,17 +267,38 @@ func (c *ClientService) AlternateListenTo() chan string {
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
-const heartbeatPeriod = 8 * time.Second
+const maximumHeartbeat = 3 * time.Minute
 
-func (c *ClientService) heartbeat(quit chan int) {
+func (c *ClientService) sendHeartbeat(quit chan int) {
 	for {
 		select {
-		case <-time.After(heartbeatPeriod):
-			// TODO: send and receive heartbeats (maximum 3 minutes)
-			fmt.Println("\nHeartbeat...")
+		case <-time.After(internal.HeartbeatPeriod):
+			fmt.Println("\nHeartbeat...") // TODO: remove
 			c.serverConn.SendHeartbeat(c.state.username)
 		case <-quit:
 			return
+		}
+	}
+}
+
+func (c *ClientService) receiveHeartbeat() {
+	read := make(chan string)
+	go c.readHeartbeats(read)
+	for {
+		select {
+		case <-time.After(maximumHeartbeat):
+			fmt.Println("Erro: O servidor não está disponível.")
+			os.Exit(1)
+		case <-read:
+			return
+		}
+	}
+}
+func (c *ClientService) readHeartbeats(read chan string) {
+	for {
+		str, err := c.serverConn.ReadHeartbeat()
+		if err != nil {
+			read <- str
 		}
 	}
 }
