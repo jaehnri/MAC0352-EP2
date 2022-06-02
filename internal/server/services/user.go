@@ -136,6 +136,15 @@ func (u *UserService) Over(args []string) error {
 		return err
 	}
 
+	err = u.repository.ChangeStatusWithoutAddress(user1, Available)
+	if err != nil {
+		return err
+	}
+	err = u.repository.ChangeStatusWithoutAddress(user1, Available)
+	if err != nil {
+		return err
+	}
+
 	printWinner(user1, user2, pointsUser1, pointsUser2)
 	return nil
 }

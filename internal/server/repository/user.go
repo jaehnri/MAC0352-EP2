@@ -46,6 +46,22 @@ func (r *UserRepository) Create(name string, password string) error {
 	return nil
 }
 
+func (r *UserRepository) ChangeStatusWithoutAddress(name string, status string) error {
+	loginQuery :=
+		"UPDATE players " +
+			" SET state   = $1 " +
+			"WHERE name   = $2 "
+
+	_, err := r.db.Exec(loginQuery, status, name)
+	if err != nil {
+		fmt.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
+		return err
+	}
+
+	fmt.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
+	return nil
+}
+
 func (r *UserRepository) ChangeStatus(name string, address string, status string) error {
 	loginQuery :=
 		"UPDATE players " +
