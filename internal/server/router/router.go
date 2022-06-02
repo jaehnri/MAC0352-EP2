@@ -17,7 +17,7 @@ type ServerRouter interface {
 	HandleIn(params []string, address string) string
 	HandleOut(params []string, address string) string
 	HandleHallOfFame() string
-	//HandleL(params []string) error
+	HandleL() string
 	//HandlePlay(params []string) error
 	//HandleCall(params []string) error
 	//HandleOver(params []string) error
@@ -49,6 +49,9 @@ func (r *Router) Route(packet string, address string) string {
 
 	case "halloffame":
 		return r.HandleHallOfFame()
+
+	case "l":
+		return r.HandleL()
 
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
@@ -99,4 +102,13 @@ func (r *Router) HandleHallOfFame() string {
 	}
 
 	return model.PrintHallOfFame(users)
+}
+
+func (r *Router) HandleL() string {
+	users, err := r.userService.GetOnlineUsers()
+	if err != nil {
+		return err.Error()
+	}
+
+	return model.PrintOnlineUsers(users)
 }

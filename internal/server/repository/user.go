@@ -108,6 +108,31 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 	return users, nil
 }
 
+func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
+	listOnlineQuery := "SELECT name, address, status FROM players " +
+		"WHERE status in ('online-available', 'online-playing') " +
+		"ORDER BY status;"
+	rows, err := r.db.Query(listOnlineQuery)
+	if err != nil {
+		fmt.Printf("Algo de errado ocorreu ao recuperar os usuários online do banco: %s", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.UserData
+	for rows.Next() {
+		var u model.UserData
+		err := rows.Scan(&u.Username, &u.Address, &u.State)
+		if err != nil {
+			fmt.Printf("Algo de errado ocorreu ao escanear as linhas dos usuários conectados: %s", err.Error())
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
+}
+
 func (r *UserRepository) ChangePassword(name string, password string) error {
 	changePasswordQuery := "UPDATE players " +
 		"SET password = $1 " +

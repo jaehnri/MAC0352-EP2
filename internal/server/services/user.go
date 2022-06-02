@@ -94,6 +94,10 @@ func (u *UserService) GetHallOfFame() ([]model.UserData, error) {
 	return u.repository.HallOfFame()
 }
 
+func (u *UserService) GetOnlineUsers() ([]model.UserData, error) {
+	return u.repository.GetOnlineUsers()
+}
+
 func (u *UserService) ListConnected() []model.UserData {
 	// TODO: Implement list connected
 	return nil
