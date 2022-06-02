@@ -18,8 +18,10 @@ type ServerRouter interface {
 	HandleOut(params []string, address string) string
 	HandleHallOfFame() string
 	HandleL() string
+	HandleGet(params []string) string
 	HandlePlay(params []string) string
 	HandleOver(params []string) string
+	HandleHeartbeat(params []string) string
 	HandleBye() string
 }
 
@@ -53,6 +55,9 @@ func (r *Router) Route(packet string, address string) string {
 	case "l":
 		return r.HandleL()
 
+	case "get":
+		return r.HandleGet(args)
+
 	case "play":
 		return r.HandlePlay(args)
 
@@ -61,6 +66,9 @@ func (r *Router) Route(packet string, address string) string {
 
 	case "bye":
 		return r.HandleBye()
+
+	case "heartbeat":
+		return r.HandleHeartbeat(args)
 
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
@@ -124,6 +132,16 @@ func (r *Router) HandleL() string {
 	return string(jsonResponse)
 }
 
+func (r *Router) HandleGet(params []string) string {
+	users, err := r.userService.GetOnlineUsers()
+	if err != nil {
+		return err.Error()
+	}
+
+	jsonResponse, err := json.Marshal(users)
+	return string(jsonResponse)
+}
+
 func (r *Router) HandlePlay(params []string) string {
 	err := r.userService.Play(params)
 	if err != nil {
@@ -139,6 +157,10 @@ func (r *Router) HandleOver(params []string) string {
 		return err.Error()
 	}
 
+	return "OK"
+}
+
+func (r *Router) HandleHeartbeat(params []string) string {
 	return "OK"
 }
 

@@ -1,4 +1,4 @@
-package servers
+package health
 
 import (
 	"bufio"
@@ -10,21 +10,21 @@ import (
 
 const (
 	ConnHost = "172.17.0.3"
-	ConnPort = "8080"
+	ConnPort = "8081"
 	ConnType = "tcp"
 )
 
-type TCPServer struct {
+type HeartbeatTCPServer struct {
 	Router *router.Router
 }
 
-func NewTCPServer() *TCPServer {
-	return &TCPServer{
+func NewHeartbeatTCPServer() *HeartbeatTCPServer {
+	return &HeartbeatTCPServer{
 		Router: router.NewRouter(),
 	}
 }
 
-func (tcp *TCPServer) StartTCPServer() {
+func (tcp *HeartbeatTCPServer) StartHeartbeatTCPServer() {
 	// Listen for incoming connections.
 	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
 	if err != nil {
@@ -49,7 +49,7 @@ func (tcp *TCPServer) StartTCPServer() {
 	}
 }
 
-func (tcp *TCPServer) handleRequest(conn net.Conn) {
+func (tcp *HeartbeatTCPServer) handleRequest(conn net.Conn) {
 	for {
 		// Read the incoming data into a variable.
 		netData, err := bufio.NewReader(conn).ReadString('\n')
