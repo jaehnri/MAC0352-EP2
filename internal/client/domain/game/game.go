@@ -46,8 +46,8 @@ type Game struct {
 // METHODS
 // //////////////////////////////////////////////////////////////////////
 
-func NewGame(user string) Game {
-	game := Game{
+func NewGame(user string) *Game {
+	game := &Game{
 		User:       user,
 		Oponent:    opositePlayer(user),
 		turn:       playsFirst,
