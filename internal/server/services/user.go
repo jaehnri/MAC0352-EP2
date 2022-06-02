@@ -4,6 +4,7 @@ import (
 	"ep2/internal/server/repository"
 	"ep2/pkg/model"
 	"fmt"
+	"strconv"
 )
 
 const (
@@ -106,4 +107,34 @@ func (u *UserService) Play(args []string) error {
 	user2 := args[1]
 
 	return u.repository.Play(user1, user2, Playing)
+}
+
+func (u *UserService) Over(args []string) error {
+	if len(args) != 4 {
+		return fmt.Errorf("ERRO: formato esperado é: over <user1> <points1> <user2> <points2>.'\n")
+	}
+
+	user1 := args[0]
+	user2 := args[2]
+	pointsUser1, err := strconv.Atoi(args[1])
+	if err != nil {
+		fmt.Printf("ERRO: formato esperado de <points1> é inteiro.")
+		return err
+	}
+	pointsUser2, err := strconv.Atoi(args[3])
+	if err != nil {
+		fmt.Printf("ERRO: formato esperado de <points2> é inteiro.")
+		return err
+	}
+
+	err = u.repository.UpdatePoints(user1, pointsUser1)
+	if err != nil {
+		return err
+	}
+	err = u.repository.UpdatePoints(user2, pointsUser2)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

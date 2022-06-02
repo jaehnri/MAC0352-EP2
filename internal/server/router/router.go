@@ -55,6 +55,9 @@ func (r *Router) Route(packet string, address string) string {
 	case "play":
 		return r.HandlePlay(args)
 
+	case "over":
+		return r.HandleOver(args)
+
 	default:
 		fmt.Printf("'%s' não é um comando conhecido.\n", command)
 		return "ERROR"
@@ -117,6 +120,15 @@ func (r *Router) HandleL() string {
 
 func (r *Router) HandlePlay(params []string) string {
 	err := r.userService.Play(params)
+	if err != nil {
+		return err.Error()
+	}
+
+	return "OK"
+}
+
+func (r *Router) HandleOver(params []string) string {
+	err := r.userService.Over(params)
 	if err != nil {
 		return err.Error()
 	}
