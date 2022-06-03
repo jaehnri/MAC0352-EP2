@@ -133,12 +133,12 @@ func (r *Router) HandleL() string {
 }
 
 func (r *Router) HandleGet(params []string) string {
-	users, err := r.userService.GetOnlineUsers()
+	user, err := r.userService.GetUser(params)
 	if err != nil {
 		return err.Error()
 	}
 
-	jsonResponse, err := json.Marshal(users)
+	jsonResponse, err := json.Marshal(user)
 	return string(jsonResponse)
 }
 

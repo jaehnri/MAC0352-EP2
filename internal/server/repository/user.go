@@ -27,6 +27,21 @@ func NewUserRepository() *UserRepository {
 	}
 }
 
+func (r *UserRepository) GetUser(name string) (*model.UserData, error) {
+	getUserQuery := "SELECT name, points, state, ip FROM players " +
+		"WHERE name = $1;"
+	row := r.db.QueryRow(getUserQuery, name)
+
+	var u model.UserData
+	err := row.Scan(&u.Username, &u.Points, &u.State, &u.Address)
+	if err != nil {
+		fmt.Printf("Algo de errado ocorreu ao escanear um usuário do banco: %s", err.Error())
+		return nil, err
+	}
+
+	return &u, nil
+}
+
 func (r *UserRepository) Create(name string, password string) error {
 	createUserQuery := "INSERT INTO players (id, name, password, state, points) " +
 		"VALUES ($1, $2, $3, $4, $5);"
@@ -66,7 +81,7 @@ func (r *UserRepository) ChangeStatus(name string, address string, status string
 	loginQuery :=
 		"UPDATE players " +
 			" SET state   = $1, " +
-			"     address = $2 " +
+			"     ip = $2 " +
 			"WHERE name   = $3 "
 
 	_, err := r.db.Exec(loginQuery, status, address, name)
@@ -125,7 +140,7 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 }
 
 func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
-	listOnlineQuery := "SELECT name, address, state FROM players " +
+	listOnlineQuery := "SELECT name, ip, state FROM players " +
 		"WHERE state in ('online-available', 'online-playing') " +
 		"ORDER BY state;"
 	rows, err := r.db.Query(listOnlineQuery)

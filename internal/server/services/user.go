@@ -23,6 +23,15 @@ func NewUserService() *UserService {
 	}
 }
 
+func (u *UserService) GetUser(args []string) (*model.UserData, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("ERRO: formato esperado é: get <user>.\n")
+	}
+
+	name := args[0]
+	return u.repository.GetUser(name)
+}
+
 func (u *UserService) Create(args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("ERRO: formato esperado é: new <user> <senha>.\n")
