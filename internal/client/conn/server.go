@@ -64,17 +64,24 @@ func newServerConnection(conn net.Conn, heartbeatConn net.Conn) *ServerConnectio
 /////////////////////////////////////////////////////////////////////////////////////
 
 func (c ServerConnection) SendStartedGame(username string, oponentUsername string) error {
-	response, err := c.request(fmt.Sprintf("game %s %s", username, oponentUsername))
+	response, err := c.request(fmt.Sprintf("play %s %s", username, oponentUsername))
 	return handleVoidResponse(response, err)
 }
 
-func (c ServerConnection) SendWon(username string) error {
-	response, err := c.request(fmt.Sprintf("over %s 3", username))
-	return handleVoidResponse(response, err)
+func (c ServerConnection) SendWon(username string, oponent string) error {
+	return c.sendOver(username, 3, oponent, 0)
 }
 
-func (c ServerConnection) SendDraw(username string) error {
-	response, err := c.request(fmt.Sprintf("over %s 1", username))
+func (c ServerConnection) SendDraw(username string, oponent string) error {
+	return c.sendOver(username, 1, oponent, 1)
+}
+
+func (c ServerConnection) SendOver(username string, oponent string) error {
+	return c.sendOver(username, 0, oponent, 0)
+}
+
+func (c ServerConnection) sendOver(username string, usernamePoints int, oponent string, oponentPoints int) error {
+	response, err := c.request(fmt.Sprintf("over %s %d %s %d", username, usernamePoints, oponent, oponentPoints))
 	return handleVoidResponse(response, err)
 }
 
@@ -102,7 +109,7 @@ func (c ServerConnection) Logout(username string) error {
 	return handleVoidResponse(response, err)
 }
 
-func (c ServerConnection) ConnectedUsers() ([]model.UserData, error) {
+func (c ServerConnection) OnlineUsers() ([]model.UserData, error) {
 	response, err := c.request("l")
 	if err != nil {
 		return nil, err

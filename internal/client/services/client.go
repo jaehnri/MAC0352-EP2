@@ -107,13 +107,12 @@ func (c *ClientService) HandleOut(params []string) error {
 	}
 	c.serverConn.Logout(c.state.username)
 	c.state.isLogged = false
-	c.state.username = ""
 	return nil
 }
 
 func (c *ClientService) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
-	users, err := c.serverConn.ConnectedUsers()
+	users, err := c.serverConn.OnlineUsers()
 	if err != nil {
 		return err
 	}
@@ -174,7 +173,6 @@ func (c *ClientService) HandleCall(params []string) error {
 	if !accepted {
 		fmt.Println("O oponente rejeitou o jogo.")
 		c.state.oponentConn.Disconnect()
-		c.state.oponentConn = nil
 		return nil
 	}
 
@@ -299,15 +297,15 @@ func (c *ClientService) handleTableChanged() {
 		return
 	case game.Won:
 		fmt.Println("Você ganhou!")
-		c.serverConn.SendWon(c.state.username)
+		c.serverConn.SendWon(c.state.username, c.state.oponentUsername)
 	case game.Draw:
 		fmt.Println("Deu velha...")
-		c.serverConn.SendDraw(c.state.username)
+		c.serverConn.SendDraw(c.state.username, c.state.oponentUsername)
 	case game.Lost:
 		fmt.Println("Você perdeu...")
 	}
+	c.state.inGame = false
 	c.state.oponentConn.Disconnect()
-	c.state.oponentConn = nil
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -320,7 +318,7 @@ func (c *ClientService) HandleOver(params []string) error {
 	}
 	c.state.oponentConn.SendOver()
 	c.state.oponentConn.Disconnect()
-	c.state.oponentConn = nil
+	c.serverConn.SendOver(c.state.username, c.state.oponentUsername)
 	c.state.inGame = false
 	fmt.Println("Você se disconectou do jogo.")
 	return nil
@@ -331,7 +329,6 @@ func (c *ClientService) HandleOvered(params []string) error {
 		return nil
 	}
 	c.state.oponentConn.Disconnect()
-	c.state.oponentConn = nil
 	c.state.inGame = false
 	fmt.Println("O oponente se disconectou do jogo.")
 	return nil
@@ -356,6 +353,7 @@ func (c *ClientService) HandleBye(params []string) error {
 	if c.state.isLogged {
 		return errors.New("você está logado, faça logout antes de sair")
 	}
+	c.serverConn.Disconnect()
 	fmt.Printf("Fechando o programa...")
 	os.Exit(0)
 	return nil
