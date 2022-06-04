@@ -76,6 +76,8 @@ func (r *Router) Route(line string, methods RouteMethods) error {
 		return methods.HandleBye(params)
 	case "help":
 		return methods.HandleHelp(params)
+	case "":
+		return nil
 	default:
 		return fmt.Errorf("'%s' não é um comando conhecido", words[0])
 	}

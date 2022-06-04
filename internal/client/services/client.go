@@ -120,7 +120,7 @@ func (c *ClientService) HandleOut(params []string) error {
 }
 
 func (c *ClientService) HandleL(params []string) error {
-	fmt.Println("Usuários conectados:")
+	fmt.Println("Usuários disponíveis:")
 	users, err := c.serverConn.OnlineUsers()
 	if err != nil {
 		return err
@@ -132,13 +132,13 @@ func (c *ClientService) HandleL(params []string) error {
 }
 
 func (c *ClientService) HandleHalloffame(params []string) error {
-	fmt.Println("Usuários conectados:")
+	fmt.Println("Maiores Pontuações:")
 	users, err := c.serverConn.AllUsers()
 	if err != nil {
 		return err
 	}
 	for i, user := range users {
-		fmt.Printf("%d. %s (%d pts)", i, user.Username, user.Points)
+		fmt.Printf("%d. %s (%d pts)\n", i, user.Username, user.Points)
 	}
 	return nil
 }

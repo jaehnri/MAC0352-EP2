@@ -92,6 +92,6 @@ func concurrentlyReadLine(scanner *bufio.Scanner, read chan string) {
 
 func handleError(err error) {
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Erro: " + err.Error())
 	}
 }
