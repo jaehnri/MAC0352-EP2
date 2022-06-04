@@ -19,6 +19,9 @@ func main() {
 	heartbeatTcpServer := health.NewHeartbeatTCPServer()
 	go heartbeatTcpServer.StartHeartbeatTCPServer()
 
+	heartbeatUdpServer := health.NewHeartbeatUDPServer()
+	go heartbeatUdpServer.StartHeartbeatUDPServer()
+
 	// listens for system signals to gracefully shutdown
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
