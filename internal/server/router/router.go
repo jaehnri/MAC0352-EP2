@@ -167,7 +167,7 @@ func (r *Router) HandleHeartbeat(params []string, address string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleBye() string {
