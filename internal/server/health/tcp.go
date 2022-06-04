@@ -1,41 +1,40 @@
-package servers
+package health
 
 import (
 	"bufio"
 	"ep2/internal/server/router"
-	"ep2/pkg/config"
 	"log"
 	"net"
 	"os"
 )
 
 const (
-	TCPHost   = "172.17.0.3"
-	TCPPort   = "8080"
-	TCPPrefix = "tcp"
+	ConnHost = "172.17.0.3"
+	ConnPort = "8081"
+	ConnType = "tcp"
 )
 
-type TCPServer struct {
+type HeartbeatTCPServer struct {
 	Router *router.Router
 }
 
-func NewTCPServer() *TCPServer {
-	return &TCPServer{
+func NewHeartbeatTCPServer() *HeartbeatTCPServer {
+	return &HeartbeatTCPServer{
 		Router: router.NewRouter(),
 	}
 }
 
-func (tcp *TCPServer) StartTCPServer() {
+func (tcp *HeartbeatTCPServer) StartHeartbeatTCPServer() {
 	// Listen for incoming connections.
-	l, err := net.Listen(TCPPrefix, TCPHost+":"+TCPPort)
+	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
 	if err != nil {
-		log.Printf("Erro ao iniciar escuta TCP: %s", err.Error())
+		log.Printf("Erro ao iniciar escuta %s:", err.Error())
 		os.Exit(1)
 	}
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	log.Printf("Escutando TCP em %s:%s", TCPHost, TCPPort)
+	log.Printf("Escutando heartbeats TCP em %s:%s", ConnHost, ConnPort)
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
@@ -50,7 +49,7 @@ func (tcp *TCPServer) StartTCPServer() {
 	}
 }
 
-func (tcp *TCPServer) handleRequest(conn net.Conn) {
+func (tcp *HeartbeatTCPServer) handleRequest(conn net.Conn) {
 	for {
 		// Read the incoming data into a variable.
 		netData, err := bufio.NewReader(conn).ReadString('\n')
@@ -59,7 +58,7 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 			break
 		}
 
-		payload := config.ParseMessageRead(netData)
+		payload := parseTCPPayload(netData)
 		response := tcp.Router.Route(payload, conn.RemoteAddr().String())
 
 		// Check if connection should end.
@@ -73,6 +72,12 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 
 	// Close the TCP connection.
 	conn.Close()
+	log.Printf("Conexão TCP fechada com cliente %s.", conn.RemoteAddr().String())
+}
+
+// Here, we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).
+func parseTCPPayload(buf string) string {
+	return buf[:len(buf)-2]
 }
 
 func shouldCloseTheConnection(response string) bool {

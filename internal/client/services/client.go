@@ -144,7 +144,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	if user.State != services.Available {
 		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
 	}
-	c.state.oponentConn, err = conn.ConnectToClient(user.ConnectedIp, config.ClientPort)
+	c.state.oponentConn, err = conn.ConnectToClient(user.Address, config.ClientPort)
 	if err != nil {
 		return err
 	}
