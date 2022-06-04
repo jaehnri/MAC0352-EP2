@@ -23,3 +23,9 @@ shutdown:
 
 remove-all:
 	docker-compose down --remove-orphans --rmi local --volumes
+
+build-client-docker:
+	docker build -f build/package/docker/client/Dockerfile . -t client-docker
+
+run-client-docker: build-client-docker
+	docker run -i client-docker ./client 172.17.0.3 8080
