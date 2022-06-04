@@ -12,8 +12,8 @@ type cellPosition struct {
 }
 
 const (
-	X     = "x"
-	O     = "o"
+	X     = "X"
+	O     = "O"
 	empty = ""
 )
 
@@ -21,7 +21,10 @@ func opositePlayer(player string) string {
 	if player == X {
 		return O
 	}
-	return X
+	if player == O {
+		return X
+	}
+	panic(fmt.Sprintf("Player %s desconhecido", player))
 }
 
 const (
@@ -77,20 +80,20 @@ var lines [amountLines][tableLength]cellPosition = [amountLines][tableLength]cel
 	{{2, 0}, {1, 1}, {0, 2}},
 }
 
-func (g Game) Play(i int, j int) error {
+func (g *Game) Play(i int, j int) error {
 	return g.play(i, j, g.User)
 }
 
-func (g Game) OponentPlayed(i int, j int) error {
+func (g *Game) OponentPlayed(i int, j int) error {
 	return g.play(i, j, g.Oponent)
 }
 
 func (g *Game) play(i int, j int, player string) error {
 	if player != g.turn {
-		return fmt.Errorf("it's not the turn of %s", player)
+		return fmt.Errorf("agora é a vez de %s", g.turn)
 	}
 	if g.table[i][j] != empty {
-		return fmt.Errorf("cell (%d,%d) is not empty", i, j)
+		return fmt.Errorf("escolha outra posição, (%d,%d) não está vazia", i, j)
 	}
 	g.emptyCells--
 	g.table[i][j] = player
@@ -98,7 +101,7 @@ func (g *Game) play(i int, j int, player string) error {
 	return nil
 }
 
-func (g Game) State() int {
+func (g *Game) State() int {
 	userWon := g.findCompletedLine()
 	if userWon == g.User {
 		return Won
@@ -111,7 +114,7 @@ func (g Game) State() int {
 	}
 	return Playing
 }
-func (g Game) findCompletedLine() string {
+func (g *Game) findCompletedLine() string {
 	for i := 0; i < amountLines; i++ {
 		hasWon := g.lineHasWon(lines[i])
 		if hasWon != empty {
@@ -120,7 +123,7 @@ func (g Game) findCompletedLine() string {
 	}
 	return empty
 }
-func (g Game) lineHasWon(line [tableLength]cellPosition) string {
+func (g *Game) lineHasWon(line [tableLength]cellPosition) string {
 	firstCell := g.table[line[0].i][line[0].j]
 	for _, cell := range line {
 		if g.table[cell.i][cell.j] != firstCell {
@@ -130,11 +133,11 @@ func (g Game) lineHasWon(line [tableLength]cellPosition) string {
 	return firstCell
 }
 
-func (g Game) PrintTable() {
+func (g *Game) PrintTable() {
 	for i, line := range g.table {
 		fmt.Printf(" %s | %s | %s \n", line[0], line[1], line[2])
 		if i != tableLength-1 {
-			fmt.Println("-------------")
+			fmt.Println("---------")
 		}
 	}
 }
