@@ -1,6 +1,10 @@
 package mocks
 
-import "ep2/pkg/model"
+import (
+	"ep2/internal/server/services"
+	"ep2/pkg/model"
+	"time"
+)
 
 type MockServerConnection struct {
 }
@@ -34,7 +38,7 @@ func (c *MockServerConnection) Disconnect() error                            { r
 
 var oponent model.UserData = model.UserData{
 	Username: "Luca",
-	State:    "online",
+	State:    services.Available,
 	Address:  "localhost",
 	Points:   0,
 }
@@ -48,4 +52,7 @@ func (c *MockServerConnection) AllUsers() ([]model.UserData, error) {
 func (c *MockServerConnection) GetUser(username string) (model.UserData, error) {
 	return model.UserData{}, nil
 }
-func (c *MockServerConnection) ReadHeartbeat() (string, error) { return "OK", nil }
+func (c *MockServerConnection) ReadHeartbeat() (string, error) {
+	time.Sleep(2 * time.Second)
+	return "OK", nil
+}

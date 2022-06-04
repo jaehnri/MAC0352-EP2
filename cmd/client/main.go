@@ -42,7 +42,7 @@ const (
 
 func createServerConnection() conn.IServerConnection {
 	if len(os.Args) < 3 {
-		handleError(errors.New("envie todos os argumentos"))
+		handleError(errors.New("ERRO: formato esperado é: ./client <server-ip> <server-port> <conn-type>"))
 		os.Exit(1)
 	}
 	serverIp := os.Args[1]
@@ -64,8 +64,8 @@ func createServerConnection() conn.IServerConnection {
 	case udp:
 		serverConn, err = conn.UdpConnectToServer(serverIp, serverPort)
 	case "mock":
-		if len(os.Args) <= 6 {
-			handleError(errors.New("run: ./client mock <ip-listen> <ip-connect>"))
+		if len(os.Args) < 6 {
+			handleError(errors.New("run: ./client localhost 0 mock <ip-listen> <ip-connect>"))
 			os.Exit(1)
 		}
 		config.ClientPortListen, _ = strconv.Atoi(os.Args[4])
