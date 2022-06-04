@@ -180,7 +180,10 @@ func (c *ServerConnection) SendHeartbeat(username string) error {
 	if username != "" {
 		text += " " + username
 	}
-	_, err := c.heartbeatWriter.WriteString(config.ParseWriteMessage(text))
+	_, err := c.request(fmt.Sprintf(text))
+	if err != nil {
+		return err
+	}
 	return err
 }
 
