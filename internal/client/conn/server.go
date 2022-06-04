@@ -199,6 +199,11 @@ func (c *ServerConnection) request(str string) (string, error) {
 
 func (c *ServerConnection) send(str string) error {
 	_, err := c.writer.WriteString(config.ParseWriteMessage(str))
+	if err != nil {
+		return err
+	}
+
+	err = c.writer.Flush()
 	return err
 }
 

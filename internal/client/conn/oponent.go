@@ -91,11 +91,18 @@ func (c *OponentConnection) send(command string) error {
 	before := time.Now()
 
 	_, err := c.writer.WriteString(config.ParseWriteMessage(command))
+	if err != nil {
+		return err
+	}
+
+	err = c.writer.Flush()
+	if err != nil {
+		return err
+	}
 
 	after := time.Now()
 	c.updateLatency(after.Sub(before))
-
-	return err
+	return nil
 }
 func (c *OponentConnection) updateLatency(latency time.Duration) {
 	if len(c.Latency) < amountLatency {

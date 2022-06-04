@@ -1,8 +1,7 @@
 package config
 
-import "strconv"
-
 const MessageDelim = '\n'
+const messageDelimStr = "\n"
 
 func ParseMessageRead(str string) string {
 	if str[len(str)-2] == '\r' {
@@ -12,7 +11,7 @@ func ParseMessageRead(str string) string {
 }
 
 func ParseWriteMessage(str string) string {
-	return str + strconv.QuoteRune(MessageDelim)
+	return str + messageDelimStr
 }
 
 // Not const and different variables to be able to mock it
