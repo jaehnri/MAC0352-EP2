@@ -21,10 +21,23 @@ func NewHeartbeatCronjob() *HeartbeatCronjob {
 }
 
 func (h *HeartbeatCronjob) StartHeartbeatCronjob() {
+	h.checkLastExecutionSuccess()
 	log.Printf("Checando usuários conectados a cada %s.", HeartbeatFrequency.String())
 	for {
 		time.Sleep(HeartbeatFrequency)
 		h.checkOnlineUsers()
+	}
+}
+
+func (h *HeartbeatCronjob) checkLastExecutionSuccess() {
+	onlineUsers, err := h.userService.GetOnlineUsers()
+	if err != nil {
+		log.Printf("Não foi possível resgatar usuários online do banco.")
+		return
+	}
+
+	if len(onlineUsers) != 0 {
+		log.Printf("A última execução provavelmente não teve sucesso pois há %d usuário(s) online.", len(onlineUsers))
 	}
 }
 
