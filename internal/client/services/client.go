@@ -142,7 +142,11 @@ func (c *ClientService) HandleCall(params []string) error {
 	if c.state.inGame {
 		return errors.New("você já está jogando")
 	}
-	oponent, err := c.serverConn.GetUser(params[0])
+	oponentName := params[0]
+	if oponentName == c.state.username {
+		return errors.New("você não pode jogar contra si mesmo")
+	}
+	oponent, err := c.serverConn.GetUser(oponentName)
 	if err != nil {
 		return err
 	}
