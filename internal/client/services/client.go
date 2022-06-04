@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bufio"
 	"ep2/internal/client/conn"
 	"ep2/internal/client/domain/game"
 	"ep2/internal/server/services"
@@ -32,13 +31,13 @@ type ClientChannels struct {
 }
 
 type ClientService struct {
-	state      *stateStruct
-	serverConn conn.IServerConnection
-	StdIn      *bufio.Scanner
-	Channels   *ClientChannels
+	state        *stateStruct
+	serverConn   conn.IServerConnection
+	readTerminal chan string
+	Channels     *ClientChannels
 }
 
-func NewClientService(serverConn conn.IServerConnection) *ClientService {
+func NewClientService(serverConn conn.IServerConnection, readTerminal chan string) *ClientService {
 	c := &ClientService{
 		state: &stateStruct{
 			isLogged: false,
@@ -49,8 +48,8 @@ func NewClientService(serverConn conn.IServerConnection) *ClientService {
 			NewOponentConn:  make(chan *conn.OponentConnection),
 			quitOponentConn: make(chan string),
 		},
-		serverConn: serverConn,
-		StdIn:      bufio.NewScanner(os.Stdin),
+		serverConn:   serverConn,
+		readTerminal: readTerminal,
 	}
 	go c.receiveHeartbeats()
 	go c.sendHeartbeats()
@@ -197,6 +196,7 @@ func (c *ClientService) HandleCall(params []string) error {
 
 	// start the game
 	fmt.Println("O oponente aceitou o jogo.")
+	fmt.Println("É a sua vez de jogar...")
 	c.serverConn.SendStartedGame(c.state.username, oponent.Username)
 	c.startGame(game.X, oponent.Username)
 	return nil
@@ -209,18 +209,18 @@ func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection
 	}
 
 	var accepted bool
-	if c.state.inGame {
+	if !c.state.isLogged || c.state.inGame {
 		accepted = false
 	} else {
 		fmt.Printf("Você deseja jogar com %s?[s/n] ", oponentUsername)
 		for {
-			c.StdIn.Scan()
-			text := strings.ToLower(c.StdIn.Text()[0:1])
+			read := <-c.readTerminal
+			text := strings.ToLower(read[0:1])
 			accepted = (text == "s")
 			if text == "s" || text == "n" {
-				fmt.Println("Resposta desconhecida.")
-			} else {
 				break
+			} else {
+				fmt.Println("Resposta desconhecida.")
 			}
 		}
 	}
@@ -270,9 +270,9 @@ func (c *ClientService) HandlePlay(params []string) error {
 	if err != nil {
 		return err
 	}
+	c.state.oponentConn.SendPlay(int(i), int(j))
 	c.handleTableChanged(true)
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
-	c.state.oponentConn.SendPlay(int(i), int(j))
 	return nil
 }
 
@@ -296,14 +296,14 @@ func (c *ClientService) HandlePlayed(params []string) error {
 
 func (c *ClientService) listenOponent() {
 	readFromOponent := make(chan string)
-	go func() {
-		for {
-			str, _ := c.state.oponentConn.Read()
-			readFromOponent <- str
-		}
-	}()
-
 	for {
+		go func() {
+			str, err := c.state.oponentConn.Read()
+			if err == nil {
+				readFromOponent <- str
+			}
+		}()
+
 		select {
 		case str := <-readFromOponent:
 			c.Channels.OponentCommands <- str
@@ -317,6 +317,11 @@ func (c *ClientService) handleTableChanged(userPlayed bool) {
 	c.state.game.PrintTable()
 	gameState := c.state.game.State()
 	if gameState == game.Playing {
+		if userPlayed {
+			fmt.Println("Agora é a vez do seu oponente...")
+		} else {
+			fmt.Println("É a sua vez de jogar...")
+		}
 		return
 	}
 
@@ -366,6 +371,7 @@ func (c *ClientService) HandleOvered(params []string) error {
 }
 
 func (c *ClientService) endGame() {
+	c.Channels.quitOponentConn <- "quit"
 	c.state.oponentConn.Disconnect()
 	c.state.inGame = false
 }

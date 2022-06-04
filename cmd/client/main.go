@@ -15,12 +15,14 @@ import (
 )
 
 func main() {
+	readTerminal := make(chan string)
+
 	serverConn := createServerConnection()
-	clientService := services.NewClientService(serverConn)
+	clientService := services.NewClientService(serverConn, readTerminal)
 	router := client.NewRouter()
 
-	readTerminal := make(chan string)
-	go concurrentlyReadLine(clientService.StdIn, readTerminal)
+	scanner := bufio.NewScanner(os.Stdin)
+	go concurrentlyReadLine(scanner, readTerminal)
 
 	for {
 		fmt.Printf("JogoDaVelha> ")
