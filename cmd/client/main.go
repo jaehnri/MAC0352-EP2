@@ -17,18 +17,19 @@ func main() {
 	clientService := services.NewClientService(serverConn)
 	router := client.NewRouter()
 
-	scanner := bufio.NewScanner(os.Stdin)
 	readTerminal := make(chan string)
-	go concurrentlyReadLine(scanner, readTerminal)
+	go concurrentlyReadLine(clientService.StdIn, readTerminal)
 
 	for {
 		fmt.Printf("JogoDaVelha> ")
-		var line string
 		select {
-		case line = <-readTerminal:
-		case line = <-clientService.AlternateListenTo():
+		case line := <-readTerminal:
+			handleError(router.Route(line, clientService))
+		case line := <-clientService.Channels.OponentCommands:
+			handleError(router.Route(line, clientService))
+		case newConn := <-clientService.Channels.NewOponentConn:
+			handleError(clientService.HandleCallRequest(newConn))
 		}
-		handleError(router.Route(line, clientService))
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"ep2/pkg/config"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"time"
 )
@@ -23,12 +24,30 @@ func ConnectToClient(ip string, port int) (*OponentConnection, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newOponentConnection(conn), nil
+}
+func WaitForOponentConnection() *OponentConnection {
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(config.ClientPort))
+	if err != nil {
+		fmt.Println("Erro ao iniciar escuta:", err.Error())
+		os.Exit(1)
+	}
+	defer l.Close()
+
+	conn, _ := l.Accept()
+	return newOponentConnection(conn)
+}
+func newOponentConnection(conn net.Conn) *OponentConnection {
 	return &OponentConnection{
 		conn:   conn,
 		writer: *bufio.NewWriter(conn),
 		reader: *bufio.NewReader(conn),
-	}, nil
+	}
 }
+
+//////////////////////////////////////////////////////////////
+// SEND
+//////////////////////////////////////////////////////////////
 
 func (c *OponentConnection) SendOver() error {
 	return c.send("overed")
@@ -37,6 +56,32 @@ func (c *OponentConnection) SendOver() error {
 func (c *OponentConnection) SendPlay(i int, j int) error {
 	return c.send(fmt.Sprintf("played %d %d", i, j))
 }
+
+//////////////////////////////////////////////////////////////
+// ACCEPT CONNECTION
+//////////////////////////////////////////////////////////////
+
+const (
+	acceptGame = "accept"
+	rejectGame = "reject"
+)
+
+func (c *OponentConnection) ReadGameAcceptance() (bool, error) {
+	str, err := c.Read()
+	return str == acceptGame, err
+}
+
+func (c *OponentConnection) SendAcceptGame() error {
+	return c.send(acceptGame)
+}
+
+func (c *OponentConnection) SendRejectGame() error {
+	return c.send(rejectGame)
+}
+
+//////////////////////////////////////////////////////////////
+// CORE
+//////////////////////////////////////////////////////////////
 
 func (c *OponentConnection) send(command string) error {
 	before := time.Now()

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"ep2/internal/client/conn"
 	"ep2/internal/client/domain/game"
 	"ep2/internal/server/services"
@@ -9,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,30 +19,41 @@ type stateStruct struct {
 	isLogged bool
 	username string
 	// connection
-	inGame         bool
-	game           *game.Game
-	oponentConn    *conn.OponentConnection
-	quitHearbeat   chan int
-	oponentChannel chan string
+	inGame      bool
+	game        *game.Game
+	oponentConn *conn.OponentConnection
+}
+
+type ClientChannels struct {
+	OponentCommands chan string
+	NewOponentConn  chan *conn.OponentConnection
+	quitOponentConn chan string
 }
 
 type ClientService struct {
 	state      *stateStruct
 	serverConn *conn.ServerConnection
+	StdIn      *bufio.Scanner
+	Channels   *ClientChannels
 }
 
 func NewClientService(serverConn *conn.ServerConnection) *ClientService {
 	c := &ClientService{
 		state: &stateStruct{
-			isLogged:       false,
-			inGame:         false,
-			oponentChannel: make(chan string),
-			quitHearbeat:   make(chan int),
+			isLogged: false,
+			inGame:   false,
+		},
+		Channels: &ClientChannels{
+			OponentCommands: make(chan string),
+			NewOponentConn:  make(chan *conn.OponentConnection),
+			quitOponentConn: make(chan string),
 		},
 		serverConn: serverConn,
+		StdIn:      bufio.NewScanner(os.Stdin),
 	}
 	go c.receiveHeartbeats()
-	go c.sendHeartbeats(c.state.quitHearbeat)
+	go c.sendHeartbeats()
+	go c.acceptOponentConn()
 	return c
 }
 
@@ -65,7 +78,6 @@ func (c *ClientService) HandleIn(params []string) error {
 	if err != nil {
 		return err
 	}
-	go c.listenOponent() // TODO: LISTEN TO NEW CONNECTIONS
 	c.state.isLogged = true
 	c.state.username = username
 	fmt.Printf("Você está logado como '%s'\n", username)
@@ -89,7 +101,6 @@ func (c *ClientService) HandleOut(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
 	}
-	c.state.quitHearbeat <- 0
 	c.serverConn.Logout(c.state.username)
 	c.state.isLogged = false
 	c.state.username = ""
@@ -123,8 +134,8 @@ func (c *ClientService) HandleHalloffame(params []string) error {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleCall(params []string) error {
-	if !c.state.inGame {
-		return errors.New("faça login antes de iniciar um jogo")
+	if c.state.inGame {
+		return errors.New("você já está jogando")
 	}
 	user, err := c.serverConn.GetUser(params[0])
 	if err != nil {
@@ -137,9 +148,54 @@ func (c *ClientService) HandleCall(params []string) error {
 	if err != nil {
 		return err
 	}
-	go c.listenOponent()
+
+	fmt.Println("Aguardando a resposta do oponente...")
+	accepted, err := c.state.oponentConn.ReadGameAcceptance()
+	if err != nil {
+		return err
+	}
+	if !accepted {
+		fmt.Println("O oponente rejeitou o jogo.")
+		c.state.oponentConn.Disconnect()
+		c.state.oponentConn = nil
+		return nil
+	}
+
+	fmt.Println("O oponente aceitou o jogo.")
 	c.state.inGame = true
 	c.state.game = game.NewGame(game.X) // TODO
+	go c.listenOponent()
+	return nil
+}
+func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection) error {
+	var accepted bool
+
+	if c.state.inGame {
+		accepted = false
+	} else {
+		fmt.Println("Você deseja jogar? [s/n]")
+		for {
+			c.StdIn.Scan()
+			text := strings.ToLower(c.StdIn.Text()[0:1])
+			accepted = (text == "s")
+			if text == "s" || text == "n" {
+				fmt.Println("Resposta desconhecida.")
+			} else {
+				break
+			}
+		}
+	}
+
+	if accepted {
+		c.state.oponentConn = newOponentConn
+		c.state.oponentConn.SendAcceptGame()
+		c.state.inGame = true
+		c.state.game = game.NewGame(game.O)
+		go c.listenOponent()
+	} else {
+		newOponentConn.SendRejectGame()
+		newOponentConn.Disconnect()
+	}
 	return nil
 }
 func (c *ClientService) HandlePlay(params []string) error {
@@ -256,29 +312,16 @@ func (c *ClientService) HandleBye(params []string) error {
 }
 
 // /////////////////////////////////////////////////////////////////////
-// ALTERNATE
-// /////////////////////////////////////////////////////////////////////
-
-func (c *ClientService) AlternateListenTo() chan string {
-	return c.state.oponentChannel
-}
-
-// /////////////////////////////////////////////////////////////////////
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
 const heartbeatPeriod = 5 * time.Second
 const maximumHeartbeat = 3 * time.Minute
 
-func (c *ClientService) sendHeartbeats(quit chan int) {
+func (c *ClientService) sendHeartbeats() {
 	for {
-		select {
-		case <-time.After(heartbeatPeriod):
-			fmt.Println("\nHeartbeat...") // TODO: remove
-			c.serverConn.SendHeartbeat(c.state.username)
-		case <-quit:
-			return
-		}
+		time.Sleep(heartbeatPeriod)
+		c.serverConn.SendHeartbeat(c.state.username)
 	}
 }
 
@@ -303,6 +346,28 @@ func (c *ClientService) readHeartbeats(read chan string) {
 	}
 }
 
+func (c *ClientService) acceptOponentConn() {
+	for {
+		oponentConn := conn.WaitForOponentConnection()
+		c.Channels.NewOponentConn <- oponentConn
+	}
+}
+
 func (c *ClientService) listenOponent() {
-	// TODO
+	readFromOponent := make(chan string)
+	go func() {
+		for {
+			str, _ := c.state.oponentConn.Read()
+			readFromOponent <- str
+		}
+	}()
+
+	for {
+		select {
+		case str := <-readFromOponent:
+			c.Channels.OponentCommands <- str
+		case <-c.Channels.quitOponentConn:
+			return
+		}
+	}
 }
