@@ -22,6 +22,9 @@ func main() {
 	heartbeatUdpServer := health.NewHeartbeatUDPServer()
 	go heartbeatUdpServer.StartHeartbeatUDPServer()
 
+	heartbeatCronjob := health.NewHeartbeatCronjob()
+	go heartbeatCronjob.StartHeartbeatCronjob()
+
 	// listens for system signals to gracefully shutdown
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)

@@ -87,7 +87,7 @@ func (r *UserRepository) ChangeStatus(name string, address string, status string
 			"last_heartbeat = $3  " +
 			"WHERE name   = $4 "
 
-	_, err := r.db.Exec(loginQuery, status, address, time.Now(), name)
+	_, err := r.db.Exec(loginQuery, status, address, time.Now().UTC(), name)
 	if err != nil {
 		log.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
 		return err
@@ -143,7 +143,7 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 }
 
 func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
-	listOnlineQuery := "SELECT name, ip, state FROM players " +
+	listOnlineQuery := "SELECT name, ip, state, last_heartbeat FROM players " +
 		"WHERE state in ('online-available', 'online-playing') " +
 		"ORDER BY state;"
 	rows, err := r.db.Query(listOnlineQuery)
@@ -156,7 +156,7 @@ func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
 	var users []model.UserData
 	for rows.Next() {
 		var u model.UserData
-		err := rows.Scan(&u.Username, &u.Address, &u.State)
+		err := rows.Scan(&u.Username, &u.Address, &u.State, &u.LastHeartbeat)
 		if err != nil {
 			log.Printf("Algo de errado ocorreu ao escanear as linhas dos usuários conectados: %s", err.Error())
 			return nil, err
@@ -215,7 +215,7 @@ func (r *UserRepository) UpdateHeartbeats(name string, ip string) error {
 		"SET ip = $1," +
 		"last_heartbeat = $2 " +
 		"WHERE name = $3"
-	_, err := r.db.Exec(changePasswordQuery, ip, time.Now(), name)
+	_, err := r.db.Exec(changePasswordQuery, ip, time.Now().UTC(), name)
 	if err != nil {
 		log.Printf("Algo de errado aconteceu ao atualizar o heartbeat de um usuário no banco: %s\n", err.Error())
 		return err

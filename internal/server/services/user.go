@@ -63,6 +63,10 @@ func (u *UserService) ChangePassword(args []string) error {
 	return u.repository.ChangePassword(user, newPassword)
 }
 
+func (u *UserService) DisconnectUser(name string) error {
+	return u.repository.ChangeStatusWithoutAddress(name, Offline)
+}
+
 func (u *UserService) Login(args []string, address string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("ERRO: formato esperado é: in <user> <senha>.\n")
