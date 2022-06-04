@@ -70,6 +70,7 @@ func (c *ClientService) HandleNew(params []string) error {
 	fmt.Println("Usuário criado com sucesso")
 	return nil
 }
+
 func (c *ClientService) HandleIn(params []string) error {
 	if c.state.isLogged {
 		return errors.New("você já está logado, faça logout para trocar de usuário")
@@ -84,6 +85,7 @@ func (c *ClientService) HandleIn(params []string) error {
 	fmt.Printf("Você está logado como '%s'\n", username)
 	return nil
 }
+
 func (c *ClientService) HandlePass(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
@@ -95,6 +97,7 @@ func (c *ClientService) HandlePass(params []string) error {
 	fmt.Println("Sua senha foi alterada.")
 	return nil
 }
+
 func (c *ClientService) HandleOut(params []string) error {
 	if c.state.inGame {
 		return errors.New("você está em um jogo")
@@ -107,6 +110,7 @@ func (c *ClientService) HandleOut(params []string) error {
 	c.state.username = ""
 	return nil
 }
+
 func (c *ClientService) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
 	users, err := c.serverConn.ConnectedUsers()
@@ -118,6 +122,7 @@ func (c *ClientService) HandleL(params []string) error {
 	}
 	return nil
 }
+
 func (c *ClientService) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
 	users, err := c.serverConn.AllUsers()
@@ -131,7 +136,7 @@ func (c *ClientService) HandleHalloffame(params []string) error {
 }
 
 // /////////////////////////////////////////////////////////////////////
-// GAME
+// CALL
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleCall(params []string) error {
@@ -182,6 +187,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	go c.listenOponent()
 	return nil
 }
+
 func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection) error {
 	oponentUsername, err := newOponentConn.Read()
 	if err != nil {
@@ -218,6 +224,18 @@ func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection
 	}
 	return nil
 }
+
+func (c *ClientService) acceptOponentConn() {
+	for {
+		oponentConn := conn.WaitForOponentConnection()
+		c.Channels.NewOponentConn <- oponentConn
+	}
+}
+
+// /////////////////////////////////////////////////////////////////////
+// PLAY
+// /////////////////////////////////////////////////////////////////////
+
 func (c *ClientService) HandlePlay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
@@ -236,6 +254,7 @@ func (c *ClientService) HandlePlay(params []string) error {
 	c.state.oponentConn.SendPlay(int(i), int(j))
 	return nil
 }
+
 func (c *ClientService) HandlePlayed(params []string) error {
 	if !c.state.inGame {
 		return nil
@@ -253,36 +272,24 @@ func (c *ClientService) HandlePlayed(params []string) error {
 	c.handleTableChanged()
 	return nil
 }
-func (c *ClientService) HandleDelay(params []string) error {
-	if !c.state.inGame {
-		return errors.New("você não está em um jogo")
+
+func (c *ClientService) listenOponent() {
+	readFromOponent := make(chan string)
+	go func() {
+		for {
+			str, _ := c.state.oponentConn.Read()
+			readFromOponent <- str
+		}
+	}()
+
+	for {
+		select {
+		case str := <-readFromOponent:
+			c.Channels.OponentCommands <- str
+		case <-c.Channels.quitOponentConn:
+			return
+		}
 	}
-	fmt.Println("A latência das últimas mensagens foram:")
-	for _, latency := range c.state.oponentConn.Latency {
-		fmt.Printf("- %d milisegundos\n", latency)
-	}
-	return nil
-}
-func (c *ClientService) HandleOver(params []string) error {
-	if !c.state.inGame {
-		return errors.New("você não está em um jogo")
-	}
-	c.state.oponentConn.SendOver()
-	c.state.oponentConn.Disconnect()
-	c.state.oponentConn = nil
-	c.state.inGame = false
-	fmt.Println("Você se disconectou do jogo.")
-	return nil
-}
-func (c *ClientService) HandleOvered(params []string) error {
-	if !c.state.inGame {
-		return nil
-	}
-	c.state.oponentConn.Disconnect()
-	c.state.oponentConn = nil
-	c.state.inGame = false
-	fmt.Println("O oponente se disconectou do jogo.")
-	return nil
 }
 
 func (c *ClientService) handleTableChanged() {
@@ -304,8 +311,55 @@ func (c *ClientService) handleTableChanged() {
 }
 
 // /////////////////////////////////////////////////////////////////////
+// OVER
+// /////////////////////////////////////////////////////////////////////
+
+func (c *ClientService) HandleOver(params []string) error {
+	if !c.state.inGame {
+		return errors.New("você não está em um jogo")
+	}
+	c.state.oponentConn.SendOver()
+	c.state.oponentConn.Disconnect()
+	c.state.oponentConn = nil
+	c.state.inGame = false
+	fmt.Println("Você se disconectou do jogo.")
+	return nil
+}
+
+func (c *ClientService) HandleOvered(params []string) error {
+	if !c.state.inGame {
+		return nil
+	}
+	c.state.oponentConn.Disconnect()
+	c.state.oponentConn = nil
+	c.state.inGame = false
+	fmt.Println("O oponente se disconectou do jogo.")
+	return nil
+}
+
+// /////////////////////////////////////////////////////////////////////
 // MORE
 // /////////////////////////////////////////////////////////////////////
+
+func (c *ClientService) HandleDelay(params []string) error {
+	if !c.state.inGame {
+		return errors.New("você não está em um jogo")
+	}
+	fmt.Println("A latência das últimas mensagens foram:")
+	for _, latency := range c.state.oponentConn.Latency {
+		fmt.Printf("- %d milisegundos\n", latency)
+	}
+	return nil
+}
+
+func (c *ClientService) HandleBye(params []string) error {
+	if c.state.isLogged {
+		return errors.New("você está logado, faça logout antes de sair")
+	}
+	fmt.Printf("Fechando o programa...")
+	os.Exit(0)
+	return nil
+}
 
 func (c *ClientService) HandleHelp(params []string) error {
 	fmt.Println("new <usuario> <senha>: cria um novo usuário")
@@ -322,17 +376,9 @@ func (c *ClientService) HandleHelp(params []string) error {
 	fmt.Println("help: mostra os comandos existentes")
 	return nil
 }
-func (c *ClientService) HandleBye(params []string) error {
-	if c.state.isLogged {
-		return errors.New("você está logado, faça logout antes de sair")
-	}
-	fmt.Printf("Fechando o programa...")
-	os.Exit(0)
-	return nil
-}
 
 // /////////////////////////////////////////////////////////////////////
-// CONCURRENCY
+// HEARTBEAT
 // /////////////////////////////////////////////////////////////////////
 
 const heartbeatPeriod = 5 * time.Second
@@ -362,32 +408,6 @@ func (c *ClientService) readHeartbeats(read chan string) {
 		str, err := c.serverConn.ReadHeartbeat()
 		if err != nil {
 			read <- str
-		}
-	}
-}
-
-func (c *ClientService) acceptOponentConn() {
-	for {
-		oponentConn := conn.WaitForOponentConnection()
-		c.Channels.NewOponentConn <- oponentConn
-	}
-}
-
-func (c *ClientService) listenOponent() {
-	readFromOponent := make(chan string)
-	go func() {
-		for {
-			str, _ := c.state.oponentConn.Read()
-			readFromOponent <- str
-		}
-	}()
-
-	for {
-		select {
-		case str := <-readFromOponent:
-			c.Channels.OponentCommands <- str
-		case <-c.Channels.quitOponentConn:
-			return
 		}
 	}
 }
