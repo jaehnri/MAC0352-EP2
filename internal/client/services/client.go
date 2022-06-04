@@ -162,8 +162,9 @@ func (c *ClientService) HandleCall(params []string) error {
 	}
 
 	fmt.Println("O oponente aceitou o jogo.")
+	c.serverConn.SendStartedGame(c.state.username, user.Username)
 	c.state.inGame = true
-	c.state.game = game.NewGame(game.X) // TODO
+	c.state.game = game.NewGame(game.X)
 	go c.listenOponent()
 	return nil
 }

@@ -63,6 +63,11 @@ func newServerConnection(conn net.Conn, heartbeatConn net.Conn) *ServerConnectio
 // Methods
 /////////////////////////////////////////////////////////////////////////////////////
 
+func (c ServerConnection) SendStartedGame(username string, oponentUsername string) error {
+	response, err := c.request(fmt.Sprintf("game %s %s", username, oponentUsername))
+	return handleVoidResponse(response, err)
+}
+
 func (c ServerConnection) SendWon(username string) error {
 	response, err := c.request(fmt.Sprintf("over %s 3", username))
 	return handleVoidResponse(response, err)
