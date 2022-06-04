@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -79,7 +80,7 @@ func (u *UserService) Login(args []string, address string) error {
 		return fmt.Errorf("ERRO: Usuário <%s> errou a senha.\n", name)
 	}
 
-	err = u.repository.ChangeStatus(name, address, Available)
+	err = u.repository.ChangeStatus(name, removePortFromIPAddress(address), Available)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (u *UserService) Logout(args []string, address string) error {
 	}
 	name := args[0]
 
-	err := u.repository.ChangeStatus(name, address, Offline)
+	err := u.repository.ChangeStatus(name, removePortFromIPAddress(address), Offline)
 	if err != nil {
 		return err
 	}
@@ -159,6 +160,20 @@ func (u *UserService) Over(args []string) error {
 	return nil
 }
 
+func (u *UserService) UpdateHeartbeat(args []string, address string) error {
+	if len(args) == 0 {
+		log.Printf("Heartbeat recebido de cliente em %s", removePortFromIPAddress(address))
+		return nil
+	}
+
+	if len(args) != 1 {
+		return fmt.Errorf("ERRO: formato esperado é: heartbeat <user1>.'\n")
+	}
+
+	name := args[0]
+	return u.repository.UpdateHeartbeats(name, removePortFromIPAddress(address))
+}
+
 func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
 	if pointsUser1 > pointsUser2 {
 		log.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!", user1, user2, user1)
@@ -171,4 +186,8 @@ func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
 	if pointsUser1 == pointsUser2 {
 		log.Printf("A partida entre <%s> e <%s> encerrou em empate.", user1, user2)
 	}
+}
+
+func removePortFromIPAddress(address string) string {
+	return strings.Split(address, ":")[0]
 }

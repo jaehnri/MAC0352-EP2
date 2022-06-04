@@ -68,7 +68,7 @@ func (r *Router) Route(packet string, address string) string {
 		return r.HandleBye()
 
 	case "heartbeat":
-		return r.HandleHeartbeat(args)
+		return r.HandleHeartbeat(args, address)
 
 	default:
 		log.Printf("'%s' não é um comando conhecido.", command)
@@ -160,7 +160,12 @@ func (r *Router) HandleOver(params []string) string {
 	return "OK"
 }
 
-func (r *Router) HandleHeartbeat(params []string) string {
+func (r *Router) HandleHeartbeat(params []string, address string) string {
+	err := r.userService.UpdateHeartbeat(params, address)
+	if err != nil {
+		return err.Error()
+	}
+
 	return "OK"
 }
 

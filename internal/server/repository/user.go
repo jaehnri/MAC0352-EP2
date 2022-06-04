@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"log"
+	"time"
 )
 
 type UserRepository struct {
@@ -205,5 +206,20 @@ func (r *UserRepository) UpdatePoints(name string, points int) error {
 	}
 
 	log.Printf("Os pontos do usuário <%s> foram atualizados.\n", name)
+	return nil
+}
+
+func (r *UserRepository) UpdateHeartbeats(name string, ip string) error {
+	changePasswordQuery := "UPDATE players " +
+		"SET ip = $1," +
+		"last_heartbeat = $2 " +
+		"WHERE name = $3"
+	_, err := r.db.Exec(changePasswordQuery, ip, time.Now(), name)
+	if err != nil {
+		log.Printf("Algo de errado aconteceu ao atualizar o heartbeat de um usuário no banco: %s\n", err.Error())
+		return err
+	}
+
+	log.Printf("Heartbeat recebido de <%s>!\n", name)
 	return nil
 }
