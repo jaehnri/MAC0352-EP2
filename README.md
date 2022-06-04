@@ -9,7 +9,16 @@ Second project for MAC0352 - Computer Networks and Distributed Systems.
 
 The necessary dependencies required to run this project are:
 - [docker-compose](https://docs.docker.com/compose/install/)
+- [docker](https://www.docker.com/)
 - [golang](https://go.dev/dl/)
+
+Also, it is required that your host is able to access the `docker network bridge` as the database and the server are deployed there.
+This network is useful so we can assign IP addresses to the containers. It can be inspected like this:
+```sh
+docker inspect network bridge
+```
+
+If you have `docker` installed, and you are using a Linux environment, it is almost certain that this network is running and available.
 
 The easiest way to run the server and the database is to run:
 ```sh
@@ -18,12 +27,28 @@ make run
 
 It makes sure to run the server, the database and the database volume so the data is kept even if the database is killed.
 
-It deploys the containers on Docker's bridge network. It assigns IP addresses to the containers. It can be inspected like this:
+Notice that this system assumes that the IPs `172.17.0.2` and `172.17.0.3` are available for use of the database and the server respectively.
+In case they aren't, the server won't be able to run.
+
+After running, you can check if everything is ok by checking if the containers are up:
 ```sh
-docker inspect network bridge
+docker-compose ps
 ```
 
-### Cleaning
+And also by checking the server logs:
+```sh
+docker logs mac0352-ep2_server_1
+```
+
+### Observations about Mac
+
+There is no `docker0` bridge on macOS. Because of the way networking is implemented in Docker Desktop for Mac, you cannot see a `docker0` interface on the host. This interface is actually within the virtual machine.
+
+Thus, it is a known Docker for Mac issue that the [the docker (Linux) bridge network is not reachable from the macOS host](https://docs.docker.com/desktop/mac/networking/#per-container-ip-addressing-is-not-possible) and [Docker Desktop for Mac can’t route traffic to containers](https://docs.docker.com/desktop/mac/networking/#i-cannot-ping-my-containers).
+
+Basically, this means that this EP won't work out of the box on MacOS environments.
+
+## Cleaning
 
 To kill the server and the database:
 ```sh
@@ -35,20 +60,6 @@ To kill everything (including the database volume):
 docker-compose down --remove-orphans --volumes
 ```
 
-
-You need golang installed to run this program.
-
-**Run Client:**
-```sh
-make build-server
-make run-server
-```
-
-**Run Server:**
-```sh
-make build-client
-make run-client
-```
 
 ## Test
 ```sh
