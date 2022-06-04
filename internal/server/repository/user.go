@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"log"
 )
 
 type UserRepository struct {
@@ -18,7 +19,7 @@ func NewUserRepository() *UserRepository {
 		"172.17.0.2", "postgres", "postgres", "postgres")
 	dbPool, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		fmt.Printf("A conexão ao banco falhou: %s\n", err.Error())
+		log.Printf("A conexão ao banco falhou: %s\n", err.Error())
 		panic(err)
 	}
 
@@ -35,7 +36,7 @@ func (r *UserRepository) GetUser(name string) (*model.UserData, error) {
 	var u model.UserData
 	err := row.Scan(&u.Username, &u.Points, &u.State, &u.Address)
 	if err != nil {
-		fmt.Printf("Algo de errado ocorreu ao escanear um usuário do banco: %s", err.Error())
+		log.Printf("Algo de errado ocorreu ao escanear um usuário do banco: %s", err.Error())
 		return nil, err
 	}
 
@@ -47,17 +48,17 @@ func (r *UserRepository) Create(name string, password string) error {
 		"VALUES ($1, $2, $3, $4, $5);"
 	statement, err := r.db.Prepare(createUserQuery)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao inserir um novo usuário no banco: %s\n", err.Error())
+		log.Printf("Algo de errado aconteceu ao inserir um novo usuário no banco: %s\n", err.Error())
 		return err
 	}
 
 	_, err = statement.Exec(uuid.New().String(), name, password, "offline", 0)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao inserir um novo usuário no banco: %s\n", err.Error())
+		log.Printf("Algo de errado aconteceu ao inserir um novo usuário no banco: %s\n", err.Error())
 		return err
 	}
 
-	fmt.Printf("Novo usuário <%s> foi criado.\n", name)
+	log.Printf("Novo usuário <%s> foi criado.\n", name)
 	return nil
 }
 
@@ -69,11 +70,11 @@ func (r *UserRepository) ChangeStatusWithoutAddress(name string, status string) 
 
 	_, err := r.db.Exec(loginQuery, status, name)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
+		log.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
 		return err
 	}
 
-	fmt.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
+	log.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
 	return nil
 }
 
@@ -86,11 +87,11 @@ func (r *UserRepository) ChangeStatus(name string, address string, status string
 
 	_, err := r.db.Exec(loginQuery, status, address, name)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
+		log.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
 		return err
 	}
 
-	fmt.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
+	log.Printf("O usuário <%s> trocou de status para <%s>.\n", name, status)
 	return nil
 }
 
@@ -104,11 +105,11 @@ func (r *UserRepository) GetCurrentPassword(name string) (string, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Printf("Houve uma tentativa de recuperar a senha de um usuário %s inexistente.\n", name)
+			log.Printf("Houve uma tentativa de recuperar a senha de um usuário %s inexistente.\n", name)
 			return "", err
 		}
 
-		fmt.Printf("Algo de errado aconteceu ao tentar recuperar a senha atual do usuário <%s>: %s\n", name, err.Error())
+		log.Printf("Algo de errado aconteceu ao tentar recuperar a senha atual do usuário <%s>: %s\n", name, err.Error())
 		return "", err
 	}
 
@@ -120,7 +121,7 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 		"ORDER BY points DESC;"
 	rows, err := r.db.Query(hallOfFameQuery)
 	if err != nil {
-		fmt.Printf("Algo de errado ocorreu ao recuperar o Hall of fame do banco: %s", err.Error())
+		log.Printf("Algo de errado ocorreu ao recuperar o Hall of fame do banco: %s", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -130,7 +131,7 @@ func (r *UserRepository) HallOfFame() ([]model.UserData, error) {
 		var u model.UserData
 		err := rows.Scan(&u.Username, &u.Points)
 		if err != nil {
-			fmt.Printf("Algo de errado ocorreu ao escanear as linhas do Hall of Fame: %s", err.Error())
+			log.Printf("Algo de errado ocorreu ao escanear as linhas do Hall of Fame: %s", err.Error())
 			return nil, err
 		}
 		users = append(users, u)
@@ -145,7 +146,7 @@ func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
 		"ORDER BY state;"
 	rows, err := r.db.Query(listOnlineQuery)
 	if err != nil {
-		fmt.Printf("Algo de errado ocorreu ao recuperar os usuários online do banco: %s", err.Error())
+		log.Printf("Algo de errado ocorreu ao recuperar os usuários online do banco: %s", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -155,7 +156,7 @@ func (r *UserRepository) GetOnlineUsers() ([]model.UserData, error) {
 		var u model.UserData
 		err := rows.Scan(&u.Username, &u.Address, &u.State)
 		if err != nil {
-			fmt.Printf("Algo de errado ocorreu ao escanear as linhas dos usuários conectados: %s", err.Error())
+			log.Printf("Algo de errado ocorreu ao escanear as linhas dos usuários conectados: %s", err.Error())
 			return nil, err
 		}
 		users = append(users, u)
@@ -170,11 +171,11 @@ func (r *UserRepository) ChangePassword(name string, password string) error {
 		"WHERE name = $2"
 	_, err := r.db.Exec(changePasswordQuery, password, name)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao atualizar a senha de um usuário no banco: %s\n", err.Error())
+		log.Printf("Algo de errado aconteceu ao atualizar a senha de um usuário no banco: %s\n", err.Error())
 		return err
 	}
 
-	fmt.Printf("A senha do usuário <%s> foi atualizada.\n", name)
+	log.Printf("A senha do usuário <%s> foi atualizada.\n", name)
 	return nil
 }
 
@@ -184,12 +185,12 @@ func (r *UserRepository) Play(name1 string, name2 string, status string) error {
 		"WHERE name in ($2, $3)"
 	_, err := r.db.Exec(playQuery, status, name1, name2)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao atualizar o status dos jogadores <%s> e <%s>: %s\n",
+		log.Printf("Algo de errado aconteceu ao atualizar o status dos jogadores <%s> e <%s>: %s\n",
 			name1, name2, err.Error())
 		return err
 	}
 
-	fmt.Printf("Os usuários <%s> e <%s> iniciaram uma partida!\n", name1, name2)
+	log.Printf("Os usuários <%s> e <%s> iniciaram uma partida!\n", name1, name2)
 	return nil
 }
 
@@ -199,10 +200,10 @@ func (r *UserRepository) UpdatePoints(name string, points int) error {
 		"WHERE name = $2"
 	_, err := r.db.Exec(updatePointsQuery, points, name)
 	if err != nil {
-		fmt.Printf("Algo de errado aconteceu ao atualizar os pontos de um usuário no banco: %s\n", err.Error())
+		log.Printf("Algo de errado aconteceu ao atualizar os pontos de um usuário no banco: %s\n", err.Error())
 		return err
 	}
 
-	fmt.Printf("Os pontos do usuário <%s> foram atualizados.\n", name)
+	log.Printf("Os pontos do usuário <%s> foram atualizados.\n", name)
 	return nil
 }

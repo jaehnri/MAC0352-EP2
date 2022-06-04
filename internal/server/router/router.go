@@ -3,7 +3,7 @@ package router
 import (
 	"encoding/json"
 	"ep2/internal/server/services"
-	"fmt"
+	"log"
 	"strings"
 )
 
@@ -71,7 +71,7 @@ func (r *Router) Route(packet string, address string) string {
 		return r.HandleHeartbeat(args)
 
 	default:
-		fmt.Printf("'%s' não é um comando conhecido.\n", command)
+		log.Printf("'%s' não é um comando conhecido.", command)
 		return "ERROR"
 	}
 }

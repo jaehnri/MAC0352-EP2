@@ -4,6 +4,7 @@ import (
 	"ep2/internal/server/repository"
 	"ep2/pkg/model"
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -127,12 +128,12 @@ func (u *UserService) Over(args []string) error {
 	user2 := args[2]
 	pointsUser1, err := strconv.Atoi(args[1])
 	if err != nil {
-		fmt.Printf("ERRO: formato esperado de <points1> é inteiro.")
+		log.Printf("ERRO: formato esperado de <points1> é inteiro.")
 		return err
 	}
 	pointsUser2, err := strconv.Atoi(args[3])
 	if err != nil {
-		fmt.Printf("ERRO: formato esperado de <points2> é inteiro.")
+		log.Printf("ERRO: formato esperado de <points2> é inteiro.")
 		return err
 	}
 
@@ -160,14 +161,14 @@ func (u *UserService) Over(args []string) error {
 
 func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
 	if pointsUser1 > pointsUser2 {
-		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user1)
+		log.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!", user1, user2, user1)
 	}
 
 	if pointsUser1 < pointsUser2 {
-		fmt.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!\n", user1, user2, user2)
+		log.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!", user1, user2, user2)
 	}
 
 	if pointsUser1 == pointsUser2 {
-		fmt.Printf("A partida entre <%s> e <%s> encerrou em empate.\n", user1, user2)
+		log.Printf("A partida entre <%s> e <%s> encerrou em empate.", user1, user2)
 	}
 }

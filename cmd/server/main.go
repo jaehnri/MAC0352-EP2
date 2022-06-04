@@ -3,7 +3,7 @@ package main
 import (
 	"ep2/internal/server/health"
 	"ep2/internal/server/servers"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,8 +22,8 @@ func main() {
 
 	switch <-signalChannel {
 	case os.Interrupt:
-		fmt.Print("Foi recebido um SIGINT, finalizando servidor...")
+		log.Print("Foi recebido um SIGINT, finalizando servidor...")
 	case syscall.SIGTERM:
-		fmt.Print("Foi recebido um SIGTERM, finalizando servidor...")
+		log.Print("Foi recebido um SIGTERM, finalizando servidor...")
 	}
 }

@@ -3,7 +3,7 @@ package health
 import (
 	"bufio"
 	"ep2/internal/server/router"
-	"fmt"
+	"log"
 	"net"
 	"os"
 )
@@ -28,22 +28,22 @@ func (tcp *HeartbeatTCPServer) StartHeartbeatTCPServer() {
 	// Listen for incoming connections.
 	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
 	if err != nil {
-		fmt.Println("Erro ao iniciar escuta:", err.Error())
+		log.Printf("Erro ao iniciar escuta %s:", err.Error())
 		os.Exit(1)
 	}
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	fmt.Println("Escutando em " + ConnHost + ":" + ConnPort)
+	log.Printf("Servidor TCP escutando em %s:%s", ConnHost, ConnPort)
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
 		if err != nil {
-			fmt.Println("Houve um erro ao aceitar: ", err.Error())
+			log.Printf("Houve um erro ao aceitar: %s", err.Error())
 			os.Exit(1)
 		}
 
-		fmt.Printf("Conexão TCP iniciada com %s!", conn.RemoteAddr().String())
+		log.Printf("Conexão TCP iniciada com %s!", conn.RemoteAddr().String())
 		// Handle connections in a new goroutine.
 		go tcp.handleRequest(conn)
 	}
@@ -54,7 +54,7 @@ func (tcp *HeartbeatTCPServer) handleRequest(conn net.Conn) {
 		// Read the incoming data into a variable.
 		netData, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			fmt.Println("Houve um erro ao ler um payload: ", err.Error())
+			log.Printf("Houve um erro ao ler um payload: %s", err.Error())
 			break
 		}
 
