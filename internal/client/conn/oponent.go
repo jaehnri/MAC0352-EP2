@@ -2,7 +2,7 @@ package conn
 
 import (
 	"bufio"
-	"ep2/internal"
+	"ep2/pkg/config"
 	"fmt"
 	"net"
 	"strconv"
@@ -41,7 +41,7 @@ func (c *OponentConnection) SendPlay(i int, j int) error {
 func (c *OponentConnection) send(command string) error {
 	before := time.Now()
 
-	_, err := c.writer.WriteString(command + strconv.QuoteRune(internal.MessageDelim))
+	_, err := c.writer.WriteString(config.ParseWriteMessage(command))
 
 	after := time.Now()
 	c.updateLatency(after.Sub(before))
@@ -61,7 +61,7 @@ func (c *OponentConnection) updateLatency(latency time.Duration) {
 }
 
 func (c *OponentConnection) Read() (string, error) {
-	str, err := c.reader.ReadString(internal.MessageDelim)
+	str, err := c.reader.ReadString(config.MessageDelim)
 	return str, err
 }
 

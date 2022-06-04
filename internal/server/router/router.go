@@ -2,6 +2,7 @@ package router
 
 import (
 	"ep2/internal/server/services"
+	"ep2/pkg/config"
 	"ep2/pkg/model"
 	"fmt"
 	"strings"
@@ -74,7 +75,7 @@ func (r *Router) HandleNew(params []string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandlePass(params []string) string {
@@ -83,7 +84,7 @@ func (r *Router) HandlePass(params []string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleIn(params []string, address string) string {
@@ -92,7 +93,7 @@ func (r *Router) HandleIn(params []string, address string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleOut(params []string, address string) string {
@@ -101,7 +102,7 @@ func (r *Router) HandleOut(params []string, address string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleHallOfFame() string {
@@ -128,7 +129,7 @@ func (r *Router) HandlePlay(params []string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleOver(params []string) string {
@@ -137,7 +138,7 @@ func (r *Router) HandleOver(params []string) string {
 		return err.Error()
 	}
 
-	return "OK"
+	return config.OK
 }
 
 func (r *Router) HandleBye() string {

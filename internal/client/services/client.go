@@ -1,10 +1,10 @@
 package services
 
 import (
-	"ep2/internal"
 	"ep2/internal/client/conn"
 	"ep2/internal/client/domain/game"
 	"ep2/internal/server/services"
+	"ep2/pkg/config"
 	"errors"
 	"fmt"
 	"os"
@@ -25,13 +25,13 @@ type stateStruct struct {
 }
 
 type ClientService struct {
-	state      stateStruct
+	state      *stateStruct
 	serverConn *conn.ServerConnection
 }
 
 func NewClientService(serverConn *conn.ServerConnection) *ClientService {
 	c := &ClientService{
-		state: stateStruct{
+		state: &stateStruct{
 			isLogged:       false,
 			inGame:         false,
 			oponentChannel: make(chan string),
@@ -133,7 +133,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	if user.State != services.Available {
 		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
 	}
-	c.state.oponentConn, err = conn.ConnectToClient(user.ConnectedIp, user.ConnectedPort)
+	c.state.oponentConn, err = conn.ConnectToClient(user.ConnectedIp, config.ClientPort)
 	if err != nil {
 		return err
 	}
@@ -267,12 +267,13 @@ func (c *ClientService) AlternateListenTo() chan string {
 // CONCURRENCY
 // /////////////////////////////////////////////////////////////////////
 
+const heartbeatPeriod = 5 * time.Second
 const maximumHeartbeat = 3 * time.Minute
 
 func (c *ClientService) sendHeartbeat(quit chan int) {
 	for {
 		select {
-		case <-time.After(internal.HeartbeatPeriod):
+		case <-time.After(heartbeatPeriod):
 			fmt.Println("\nHeartbeat...") // TODO: remove
 			c.serverConn.SendHeartbeat(c.state.username)
 		case <-quit:
@@ -290,7 +291,6 @@ func (c *ClientService) receiveHeartbeat() {
 			fmt.Println("Erro: O servidor não está disponível.")
 			os.Exit(1)
 		case <-read:
-			return
 		}
 	}
 }

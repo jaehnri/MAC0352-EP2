@@ -3,6 +3,7 @@ package servers
 import (
 	"bufio"
 	"ep2/internal/server/router"
+	"ep2/pkg/config"
 	"fmt"
 	"net"
 	"os"
@@ -59,7 +60,7 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 			break
 		}
 
-		payload := parseTCPPayload(netData)
+		payload := config.ParseMessageRead(netData)
 		response := tcp.Router.Route(payload, conn.RemoteAddr().String())
 
 		// Check if connection should end.
@@ -73,11 +74,6 @@ func (tcp *TCPServer) handleRequest(conn net.Conn) {
 
 	// Close the TCP connection.
 	conn.Close()
-}
-
-// Here, we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).
-func parseTCPPayload(buf string) string {
-	return buf[:len(buf)-2]
 }
 
 func shouldCloseTheConnection(response string) bool {
