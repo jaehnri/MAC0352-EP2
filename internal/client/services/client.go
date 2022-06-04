@@ -19,9 +19,10 @@ type stateStruct struct {
 	isLogged bool
 	username string
 	// connection
-	inGame      bool
-	game        *game.Game
-	oponentConn *conn.OponentConnection
+	inGame          bool
+	game            *game.Game
+	oponentConn     *conn.OponentConnection
+	oponentUsername string
 }
 
 type ClientChannels struct {
@@ -137,23 +138,34 @@ func (c *ClientService) HandleCall(params []string) error {
 	if c.state.inGame {
 		return errors.New("você já está jogando")
 	}
-	user, err := c.serverConn.GetUser(params[0])
+	oponent, err := c.serverConn.GetUser(params[0])
 	if err != nil {
 		return err
 	}
-	if user.State != services.Available {
-		return fmt.Errorf("o usuário '%s' não está disponível", user.Username)
+	if oponent.State != services.Available {
+		return fmt.Errorf("o usuário '%s' não está disponível", oponent.Username)
 	}
-	c.state.oponentConn, err = conn.ConnectToClient(user.Address, config.ClientPort)
+
+	// connect
+	c.state.oponentConn, err = conn.ConnectToClient(oponent.Address, config.ClientPort)
 	if err != nil {
 		return err
 	}
 
+	// send username
+	err = c.state.oponentConn.SendUsername(c.state.username)
+	if err != nil {
+		return err
+	}
+
+	// read acceptance response (agree or not)
 	fmt.Println("Aguardando a resposta do oponente...")
 	accepted, err := c.state.oponentConn.ReadGameAcceptance()
 	if err != nil {
 		return err
 	}
+
+	// if not accepted, close the connection
 	if !accepted {
 		fmt.Println("O oponente rejeitou o jogo.")
 		c.state.oponentConn.Disconnect()
@@ -161,20 +173,26 @@ func (c *ClientService) HandleCall(params []string) error {
 		return nil
 	}
 
+	// start the game
 	fmt.Println("O oponente aceitou o jogo.")
-	c.serverConn.SendStartedGame(c.state.username, user.Username)
+	c.serverConn.SendStartedGame(c.state.username, oponent.Username)
 	c.state.inGame = true
+	c.state.oponentUsername = oponent.Username
 	c.state.game = game.NewGame(game.X)
 	go c.listenOponent()
 	return nil
 }
 func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection) error {
-	var accepted bool
+	oponentUsername, err := newOponentConn.Read()
+	if err != nil {
+		return err
+	}
 
+	var accepted bool
 	if c.state.inGame {
 		accepted = false
 	} else {
-		fmt.Println("Você deseja jogar? [s/n]")
+		fmt.Printf("Você deseja jogar com %s?[s/n] ", oponentUsername)
 		for {
 			c.StdIn.Scan()
 			text := strings.ToLower(c.StdIn.Text()[0:1])
@@ -191,6 +209,7 @@ func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection
 		c.state.oponentConn = newOponentConn
 		c.state.oponentConn.SendAcceptGame()
 		c.state.inGame = true
+		c.state.oponentUsername = oponentUsername
 		c.state.game = game.NewGame(game.O)
 		go c.listenOponent()
 	} else {

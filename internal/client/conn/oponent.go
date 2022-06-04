@@ -79,6 +79,10 @@ func (c *OponentConnection) SendRejectGame() error {
 	return c.send(rejectGame)
 }
 
+func (c *OponentConnection) SendUsername(username string) error {
+	return c.send(username)
+}
+
 //////////////////////////////////////////////////////////////
 // CORE
 //////////////////////////////////////////////////////////////
