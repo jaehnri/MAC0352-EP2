@@ -12,9 +12,12 @@ import (
 )
 
 type ServerConnection struct {
-	conn   net.Conn
-	writer bufio.Writer
-	reader bufio.Reader
+	conn            net.Conn
+	writer          bufio.Writer
+	reader          bufio.Reader
+	heartbeatConn   net.Conn
+	heartbeatWriter bufio.Writer
+	heartbeatReader bufio.Reader
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -26,22 +29,33 @@ func TcpConnectToServer(ip string, port int) (*ServerConnection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newServerConnection(conn), nil
-}
-
-func UdpConnectToServer(ip string, port int) (*ServerConnection, error) {
-	conn, err := net.Dial("tcp", ip+":"+strconv.Itoa(port))
+	heartbeatConn, err := net.Dial("tcp", ip+":"+strconv.Itoa(config.ServerHeartbeatPort))
 	if err != nil {
 		return nil, err
 	}
-	return newServerConnection(conn), nil
+	return newServerConnection(conn, heartbeatConn), nil
 }
 
-func newServerConnection(conn net.Conn) *ServerConnection {
+func UdpConnectToServer(ip string, port int) (*ServerConnection, error) {
+	conn, err := net.Dial("udp", ip+":"+strconv.Itoa(port))
+	if err != nil {
+		return nil, err
+	}
+	heartbeatConn, err := net.Dial("udp", ip+":"+strconv.Itoa(config.ServerHeartbeatPort))
+	if err != nil {
+		return nil, err
+	}
+	return newServerConnection(conn, heartbeatConn), nil
+}
+
+func newServerConnection(conn net.Conn, heartbeatConn net.Conn) *ServerConnection {
 	return &ServerConnection{
-		writer: *bufio.NewWriter(conn),
-		reader: *bufio.NewReader(conn),
-		conn:   conn,
+		writer:          *bufio.NewWriter(conn),
+		reader:          *bufio.NewReader(conn),
+		conn:            conn,
+		heartbeatConn:   heartbeatConn,
+		heartbeatWriter: *bufio.NewWriter(heartbeatConn),
+		heartbeatReader: *bufio.NewReader(heartbeatConn),
 	}
 }
 
@@ -59,17 +73,9 @@ func (c ServerConnection) SendDraw(username string) error {
 	return handleVoidResponse(response, err)
 }
 
-func (c ServerConnection) ReadHeartbeat() (string, error) {
-	return c.read()
-}
-
-func (c ServerConnection) SendHeartbeat(username string) error {
-	text := "heartbeat"
-	if username != "" {
-		text += " " + username
-	}
-	return c.send(text)
-}
+/////////////////////////////////////////////////////////////////////////////////////
+// User
+/////////////////////////////////////////////////////////////////////////////////////
 
 func (c ServerConnection) Create(username string, password string) error {
 	response, err := c.request(fmt.Sprintf("new %s %s", username, password))
@@ -128,6 +134,24 @@ func (c ServerConnection) Get(username string) (model.UserData, error) {
 		return model.UserData{}, errors.New(response)
 	}
 	return user, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Heartbeat
+/////////////////////////////////////////////////////////////////////////////////////
+
+func (c ServerConnection) ReadHeartbeat() (string, error) {
+	str, err := c.heartbeatReader.ReadString(config.MessageDelim)
+	return str, err
+}
+
+func (c ServerConnection) SendHeartbeat(username string) error {
+	text := "heartbeat"
+	if username != "" {
+		text += " " + username
+	}
+	_, err := c.heartbeatWriter.WriteString(config.ParseWriteMessage(text))
+	return err
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
