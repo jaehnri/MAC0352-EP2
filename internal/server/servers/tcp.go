@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ConnHost = "172.17.0.3"
-	ConnPort = "8080"
-	ConnType = "tcp"
+	TCPHost   = "172.17.0.3"
+	TCPPort   = "8080"
+	TCPPrefix = "tcp"
 )
 
 type TCPServer struct {
@@ -26,15 +26,15 @@ func NewTCPServer() *TCPServer {
 
 func (tcp *TCPServer) StartTCPServer() {
 	// Listen for incoming connections.
-	l, err := net.Listen(ConnType, ConnHost+":"+ConnPort)
+	l, err := net.Listen(TCPPrefix, TCPHost+":"+TCPPort)
 	if err != nil {
-		log.Printf("Erro ao iniciar escuta UDP: %s", err.Error())
+		log.Printf("Erro ao iniciar escuta TCP: %s", err.Error())
 		os.Exit(1)
 	}
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	log.Printf("Escutando em %s:%s", ConnHost, ConnPort)
+	log.Printf("Escutando TCP em %s:%s", TCPHost, TCPPort)
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()

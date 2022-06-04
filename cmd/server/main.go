@@ -13,6 +13,9 @@ func main() {
 	tcpServer := servers.NewTCPServer()
 	go tcpServer.StartTCPServer()
 
+	udpServer := servers.NewUDPServer()
+	go udpServer.StartUDPServer()
+
 	heartbeatTcpServer := health.NewHeartbeatTCPServer()
 	go heartbeatTcpServer.StartHeartbeatTCPServer()
 

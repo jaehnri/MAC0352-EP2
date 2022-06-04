@@ -34,7 +34,7 @@ func (tcp *HeartbeatTCPServer) StartHeartbeatTCPServer() {
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	log.Printf("Servidor TCP escutando em %s:%s", ConnHost, ConnPort)
+	log.Printf("Escutando heartbeats TCP em %s:%s", ConnHost, ConnPort)
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
