@@ -82,11 +82,12 @@ func (r *UserRepository) ChangeStatusWithoutAddress(name string, status string) 
 func (r *UserRepository) ChangeStatus(name string, address string, status string) error {
 	loginQuery :=
 		"UPDATE players " +
-			" SET state   = $1, " +
-			"     ip = $2 " +
-			"WHERE name   = $3 "
+			" SET     state = $1, " +
+			"            ip = $2, " +
+			"last_heartbeat = $3  " +
+			"WHERE name   = $4 "
 
-	_, err := r.db.Exec(loginQuery, status, address, name)
+	_, err := r.db.Exec(loginQuery, status, address, time.Now(), name)
 	if err != nil {
 		log.Printf("Algo de errado aconteceu ao trocar o status do usuário <%s> no banco: %s\n", name, err.Error())
 		return err
