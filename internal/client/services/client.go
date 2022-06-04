@@ -35,10 +35,12 @@ func NewClientService(serverConn *conn.ServerConnection) *ClientService {
 			isLogged:       false,
 			inGame:         false,
 			oponentChannel: make(chan string),
+			quitHearbeat:   make(chan int),
 		},
 		serverConn: serverConn,
 	}
-	go c.receiveHeartbeat()
+	go c.receiveHeartbeats()
+	go c.sendHeartbeats(c.state.quitHearbeat)
 	return c
 }
 
@@ -63,9 +65,7 @@ func (c *ClientService) HandleIn(params []string) error {
 	if err != nil {
 		return err
 	}
-	go c.listenOponent()
-	c.state.quitHearbeat = make(chan int)
-	go c.sendHeartbeat(c.state.quitHearbeat)
+	go c.listenOponent() // TODO: LISTEN TO NEW CONNECTIONS
 	c.state.isLogged = true
 	c.state.username = username
 	fmt.Printf("Você está logado como '%s'\n", username)
@@ -270,7 +270,7 @@ func (c *ClientService) AlternateListenTo() chan string {
 const heartbeatPeriod = 5 * time.Second
 const maximumHeartbeat = 3 * time.Minute
 
-func (c *ClientService) sendHeartbeat(quit chan int) {
+func (c *ClientService) sendHeartbeats(quit chan int) {
 	for {
 		select {
 		case <-time.After(heartbeatPeriod):
@@ -282,7 +282,7 @@ func (c *ClientService) sendHeartbeat(quit chan int) {
 	}
 }
 
-func (c *ClientService) receiveHeartbeat() {
+func (c *ClientService) receiveHeartbeats() {
 	read := make(chan string)
 	go c.readHeartbeats(read)
 	for {
