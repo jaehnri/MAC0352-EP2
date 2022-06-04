@@ -168,7 +168,7 @@ func (u *UserService) Over(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = u.repository.ChangeStatusWithoutAddress(user1, Available)
+	err = u.repository.ChangeStatusWithoutAddress(user2, Available)
 	if err != nil {
 		return err
 	}
