@@ -72,6 +72,7 @@ func (tcp *HeartbeatTCPServer) handleRequest(conn net.Conn) {
 
 	// Close the TCP connection.
 	conn.Close()
+	log.Printf("Conexão TCP fechada com cliente %s.", conn.RemoteAddr().String())
 }
 
 // Here, we remove the last 2 characters as they are a carriage feed (\r) and a line break (\n).

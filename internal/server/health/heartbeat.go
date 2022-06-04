@@ -58,7 +58,9 @@ func (h *HeartbeatCronjob) checkOnlineUsers() {
 			if err != nil {
 				log.Printf("Não foi possível desconectar o usuário <%s>.", user.Username)
 			}
-			log.Printf("Usuário <%s> desconectado via checagem de heartbeat. Último heartbeat foi há %s.", user.Username, diff)
+
+			log.Printf("Usuário <%s:%s> desconectado via checagem de heartbeat. Último heartbeat foi há %s.",
+				user.Username, user.Address, diff)
 		}
 	}
 

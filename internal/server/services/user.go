@@ -81,7 +81,8 @@ func (u *UserService) Login(args []string, address string) error {
 	}
 
 	if currentPasswordFromDatabase != password {
-		return fmt.Errorf("ERRO: Usuário <%s> errou a senha.\n", name)
+		log.Printf("Usuário <%s> errou a senha a partir do cliente %s.\n", name, removePortFromIPAddress(address))
+		return fmt.Errorf("ERRO: Usuário <%s> errou a senha a partir do cliente %s.\n", name, removePortFromIPAddress(address))
 	}
 
 	err = u.repository.ChangeStatus(name, removePortFromIPAddress(address), Available)
@@ -89,6 +90,7 @@ func (u *UserService) Login(args []string, address string) error {
 		return err
 	}
 
+	log.Printf("Usuário <%s> logado no cliente %s!", name, removePortFromIPAddress(address))
 	return nil
 }
 
@@ -121,6 +123,17 @@ func (u *UserService) Play(args []string) error {
 	user1 := args[0]
 	user2 := args[1]
 
+	user1IP, err := u.repository.GetUser(user1)
+	if err != nil {
+		return err
+	}
+
+	user2IP, err := u.repository.GetUser(user2)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Os usuários <%s:%s> e <%s:%s> iniciaram uma partida!", user1, user1IP.Address, user2, user2IP.Address)
 	return u.repository.Play(user1, user2, Playing)
 }
 
@@ -160,7 +173,16 @@ func (u *UserService) Over(args []string) error {
 		return err
 	}
 
-	printWinner(user1, user2, pointsUser1, pointsUser2)
+	user1IP, err := u.repository.GetUser(user1)
+	if err != nil {
+		return err
+	}
+	user2IP, err := u.repository.GetUser(user2)
+	if err != nil {
+		return err
+	}
+
+	printWinner(user1, user2, pointsUser1, pointsUser2, user1IP.Address, user2IP.Address)
 	return nil
 }
 
@@ -178,17 +200,20 @@ func (u *UserService) UpdateHeartbeat(args []string, address string) error {
 	return u.repository.UpdateHeartbeats(name, removePortFromIPAddress(address))
 }
 
-func printWinner(user1, user2 string, pointsUser1, pointsUser2 int) {
+func printWinner(user1, user2 string, pointsUser1, pointsUser2 int, addressUser1, addressUser2 string) {
 	if pointsUser1 > pointsUser2 {
-		log.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!", user1, user2, user1)
+		log.Printf("A partida entre <%s:%s> e <%s:%s> encerrou! O vencedor foi <%s>!",
+			user1, addressUser1, addressUser2, user2, user1)
 	}
 
 	if pointsUser1 < pointsUser2 {
-		log.Printf("A partida entre <%s> e <%s> encerrou! O vencedor foi <%s>!", user1, user2, user2)
+		log.Printf("A partida entre <%s:%s> e <%s:%s> encerrou! O vencedor foi <%s>!",
+			user1, addressUser1, user2, addressUser2, user2)
 	}
 
 	if pointsUser1 == pointsUser2 {
-		log.Printf("A partida entre <%s> e <%s> encerrou em empate.", user1, user2)
+		log.Printf("A partida entre <%s:%s> e <%s:%s> encerrou em empate.",
+			user1, addressUser1, user2, addressUser2)
 	}
 }
 

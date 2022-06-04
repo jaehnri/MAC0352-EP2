@@ -192,7 +192,6 @@ func (r *UserRepository) Play(name1 string, name2 string, status string) error {
 		return err
 	}
 
-	log.Printf("Os usuários <%s> e <%s> iniciaram uma partida!\n", name1, name2)
 	return nil
 }
 
