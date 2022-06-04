@@ -179,10 +179,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	// start the game
 	fmt.Println("O oponente aceitou o jogo.")
 	c.serverConn.SendStartedGame(c.state.username, oponent.Username)
-	c.state.inGame = true
-	c.state.oponentUsername = oponent.Username
-	c.state.game = game.NewGame(game.X)
-	go c.listenOponent()
+	c.startGame(game.X, oponent.Username)
 	return nil
 }
 
@@ -212,10 +209,7 @@ func (c *ClientService) HandleCallRequest(newOponentConn *conn.OponentConnection
 	if accepted {
 		c.state.oponentConn = newOponentConn
 		c.state.oponentConn.SendAcceptGame()
-		c.state.inGame = true
-		c.state.oponentUsername = oponentUsername
-		c.state.game = game.NewGame(game.O)
-		go c.listenOponent()
+		c.startGame(game.O, oponentUsername)
 	} else {
 		newOponentConn.SendRejectGame()
 		newOponentConn.Disconnect()
@@ -228,6 +222,13 @@ func (c *ClientService) acceptOponentConn() {
 		oponentConn := conn.WaitForOponentConnection()
 		c.Channels.NewOponentConn <- oponentConn
 	}
+}
+
+func (c *ClientService) startGame(userSymbol string, oponentUsername string) {
+	c.state.inGame = true
+	c.state.oponentUsername = oponentUsername
+	c.state.game = game.NewGame(userSymbol)
+	go c.listenOponent()
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -247,7 +248,7 @@ func (c *ClientService) HandlePlay(params []string) error {
 	if err != nil {
 		return err
 	}
-	c.handleTableChanged()
+	c.handleTableChanged(true)
 	fmt.Printf("Você colocou %s em (%d,%d).\n", c.state.game.User, i, j)
 	c.state.oponentConn.SendPlay(int(i), int(j))
 	return nil
@@ -267,7 +268,7 @@ func (c *ClientService) HandlePlayed(params []string) error {
 		return err
 	}
 	fmt.Printf("O oponente jogou em (%d,%d).\n", i, j)
-	c.handleTableChanged()
+	c.handleTableChanged(false)
 	return nil
 }
 
@@ -290,22 +291,32 @@ func (c *ClientService) listenOponent() {
 	}
 }
 
-func (c *ClientService) handleTableChanged() {
+func (c *ClientService) handleTableChanged(userPlayed bool) {
 	c.state.game.PrintTable()
-	switch c.state.game.State() {
-	case game.Playing:
+	gameState := c.state.game.State()
+	if gameState == game.Playing {
 		return
+	}
+
+	switch gameState {
 	case game.Won:
 		fmt.Println("Você ganhou!")
-		c.serverConn.SendWon(c.state.username, c.state.oponentUsername)
 	case game.Draw:
 		fmt.Println("Deu velha...")
-		c.serverConn.SendDraw(c.state.username, c.state.oponentUsername)
 	case game.Lost:
 		fmt.Println("Você perdeu...")
 	}
-	c.state.inGame = false
-	c.state.oponentConn.Disconnect()
+
+	if userPlayed {
+		switch gameState {
+		case game.Won:
+			c.serverConn.SendWon(c.state.username, c.state.oponentUsername)
+		case game.Draw:
+			c.serverConn.SendDraw(c.state.username, c.state.oponentUsername)
+		}
+	}
+
+	c.endGame()
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -317,9 +328,8 @@ func (c *ClientService) HandleOver(params []string) error {
 		return errors.New("você não está em um jogo")
 	}
 	c.state.oponentConn.SendOver()
-	c.state.oponentConn.Disconnect()
 	c.serverConn.SendOver(c.state.username, c.state.oponentUsername)
-	c.state.inGame = false
+	c.endGame()
 	fmt.Println("Você se disconectou do jogo.")
 	return nil
 }
@@ -328,10 +338,14 @@ func (c *ClientService) HandleOvered(params []string) error {
 	if !c.state.inGame {
 		return nil
 	}
-	c.state.oponentConn.Disconnect()
-	c.state.inGame = false
+	c.endGame()
 	fmt.Println("O oponente se disconectou do jogo.")
 	return nil
+}
+
+func (c *ClientService) endGame() {
+	c.state.oponentConn.Disconnect()
+	c.state.inGame = false
 }
 
 // /////////////////////////////////////////////////////////////////////
