@@ -27,7 +27,7 @@ func ConnectToClient(ip string, port int) (*OponentConnection, error) {
 	return newOponentConnection(conn), nil
 }
 func WaitForOponentConnection() *OponentConnection {
-	l, err := net.Listen("tcp", ":"+strconv.Itoa(config.ClientPort))
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(config.ClientPortListen))
 	if err != nil {
 		fmt.Println("Erro ao iniciar escuta:", err.Error())
 		os.Exit(1)

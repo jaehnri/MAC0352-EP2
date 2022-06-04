@@ -15,6 +15,9 @@ func ParseWriteMessage(str string) string {
 	return str + strconv.QuoteRune(MessageDelim)
 }
 
-const ClientPort = 8080
+// Not const and different variables to be able to mock it
+var ClientPortConnect = 8080
+var ClientPortListen = 8080
+
 const ServerHeartbeatPort = 8081
 const OK = "OK"

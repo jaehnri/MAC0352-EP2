@@ -33,12 +33,12 @@ type ClientChannels struct {
 
 type ClientService struct {
 	state      *stateStruct
-	serverConn *conn.ServerConnection
+	serverConn conn.IServerConnection
 	StdIn      *bufio.Scanner
 	Channels   *ClientChannels
 }
 
-func NewClientService(serverConn *conn.ServerConnection) *ClientService {
+func NewClientService(serverConn conn.IServerConnection) *ClientService {
 	c := &ClientService{
 		state: &stateStruct{
 			isLogged: false,
@@ -155,7 +155,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	}
 
 	// connect
-	c.state.oponentConn, err = conn.ConnectToClient(oponent.Address, config.ClientPort)
+	c.state.oponentConn, err = conn.ConnectToClient(oponent.Address, config.ClientPortConnect)
 	if err != nil {
 		return err
 	}

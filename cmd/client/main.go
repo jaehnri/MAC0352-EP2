@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"ep2/cmd/client/mocks"
 	"ep2/internal/client"
 	"ep2/internal/client/conn"
 	"ep2/internal/client/services"
+	"ep2/pkg/config"
 	"errors"
 	"fmt"
 	"os"
@@ -33,10 +35,12 @@ func main() {
 	}
 }
 
-const tcp = "tcp"
-const udp = "udp"
+const (
+	tcp = "tcp"
+	udp = "udp"
+)
 
-func createServerConnection() *conn.ServerConnection {
+func createServerConnection() conn.IServerConnection {
 	if len(os.Args) < 3 {
 		handleError(errors.New("envie todos os argumentos"))
 		os.Exit(1)
@@ -53,12 +57,20 @@ func createServerConnection() *conn.ServerConnection {
 		connType = os.Args[3]
 	}
 
-	var serverConn *conn.ServerConnection
+	var serverConn conn.IServerConnection
 	switch connType {
 	case tcp:
 		serverConn, err = conn.TcpConnectToServer(serverIp, serverPort)
 	case udp:
 		serverConn, err = conn.UdpConnectToServer(serverIp, serverPort)
+	case "mock":
+		if len(os.Args) <= 6 {
+			handleError(errors.New("run: ./client mock <ip-listen> <ip-connect>"))
+			os.Exit(1)
+		}
+		config.ClientPortListen, _ = strconv.Atoi(os.Args[4])
+		config.ClientPortConnect, _ = strconv.Atoi(os.Args[5])
+		serverConn = mocks.NewServerConnection()
 	default:
 		handleError(errors.New("tipo de conexao desconhecida"))
 		os.Exit(1)
