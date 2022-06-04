@@ -2,6 +2,7 @@ package conn
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"ep2/pkg/config"
 	"ep2/pkg/model"
@@ -193,8 +194,8 @@ func (c *ServerConnection) request(str string) (string, error) {
 		return "", err
 	}
 
-	respose, err := c.read()
-	return respose, err
+	response, err := c.read()
+	return response, err
 }
 
 func (c *ServerConnection) send(str string) error {
@@ -218,8 +219,14 @@ func handleVoidResponse(response string, err error) error {
 }
 
 func (c *ServerConnection) read() (string, error) {
-	str, err := c.reader.ReadString(config.MessageDelim)
-	return config.ParseMessageRead(str), err
+	reply := make([]byte, 1024)
+	length, err := c.conn.Read(reply)
+	if err != nil {
+		return "", err
+	}
+
+	response := bytes.NewBuffer(reply[:length]).String()
+	return response, err
 }
 
 func (c *ServerConnection) Disconnect() error {
