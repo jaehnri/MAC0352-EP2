@@ -118,7 +118,7 @@ func (c *OponentConnection) updateLatency(latency time.Duration) {
 
 func (c *OponentConnection) Read() (string, error) {
 	str, err := c.reader.ReadString(config.MessageDelim)
-	return str, err
+	return config.ParseMessageRead(str), err
 }
 
 func (c *OponentConnection) Disconnect() error {
