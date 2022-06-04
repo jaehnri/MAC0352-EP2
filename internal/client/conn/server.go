@@ -3,7 +3,7 @@ package conn
 import (
 	"bufio"
 	"encoding/json"
-	"ep2/internal"
+	"ep2/pkg/config"
 	"ep2/pkg/model"
 	"errors"
 	"fmt"
@@ -50,76 +50,71 @@ func newServerConnection(conn net.Conn) *ServerConnection {
 /////////////////////////////////////////////////////////////////////////////////////
 
 func (c ServerConnection) SendWon(username string) error {
-	return c.send(fmt.Sprintf("won %s", username))
+	response, err := c.request(fmt.Sprintf("over %s 3", username))
+	return handleVoidResponse(response, err)
+}
+
+func (c ServerConnection) SendDraw(username string) error {
+	response, err := c.request(fmt.Sprintf("over %s 1", username))
+	return handleVoidResponse(response, err)
 }
 
 func (c ServerConnection) ReadHeartbeat() (string, error) {
 	return c.read()
 }
 
-func (c ServerConnection) SendDraw(username string) error {
-	return c.send(fmt.Sprintf("draw %s", username))
-}
-
 func (c ServerConnection) SendHeartbeat(username string) error {
-	return c.send(fmt.Sprintf("heartbeat %s", username))
+	text := "heartbeat"
+	if username != "" {
+		text += " " + username
+	}
+	return c.send(text)
 }
 
 func (c ServerConnection) Create(username string, password string) error {
-	response, err := c.request(fmt.Sprintf("create %s %s", username, password))
-	if err != nil {
-		return err
-	}
-	if len(response) != 0 {
-		return errors.New(response)
-	}
-	return nil
+	response, err := c.request(fmt.Sprintf("new %s %s", username, password))
+	return handleVoidResponse(response, err)
 }
 
 func (c ServerConnection) ChangePassword(username string, oldpassword, newpassword string) error {
 	response, err := c.request(fmt.Sprintf("pass %s %s %s", username, oldpassword, newpassword))
-	if err != nil {
-		return err
-	}
-	if len(response) != 0 {
-		return errors.New(response)
-	}
-	return nil
+	return handleVoidResponse(response, err)
 }
 
 func (c ServerConnection) Login(username string, password string) error {
-	response, err := c.request(fmt.Sprintf("login %s %s", username, password))
-	if err != nil {
-		return err
-	}
-	if len(response) != 0 {
-		return errors.New(response)
-	}
-	return nil
+	response, err := c.request(fmt.Sprintf("in %s %s", username, password))
+	return handleVoidResponse(response, err)
 }
 
-func (c ServerConnection) Logout(name string) error {
-	return c.send("logout")
+func (c ServerConnection) Logout(username string) error {
+	response, err := c.request(fmt.Sprintf("out %s", username))
+	return handleVoidResponse(response, err)
 }
 
 func (c ServerConnection) Connected() ([]model.UserData, error) {
-	response, err := c.request("connected")
+	response, err := c.request("l")
 	if err != nil {
 		return nil, err
 	}
 	var users []model.UserData
-	err = json.Unmarshal([]byte(response), &users)
-	return users, err
+	jsonErr := json.Unmarshal([]byte(response), &users)
+	if jsonErr != nil {
+		return nil, errors.New(response)
+	}
+	return users, nil
 }
 
 func (c ServerConnection) All() ([]model.UserData, error) {
-	response, err := c.request("get")
+	response, err := c.request("halloffame")
 	if err != nil {
 		return nil, err
 	}
 	var users []model.UserData
-	err = json.Unmarshal([]byte(response), &users)
-	return users, err
+	jsonErr := json.Unmarshal([]byte(response), &users)
+	if jsonErr != nil {
+		return nil, errors.New(response)
+	}
+	return users, nil
 }
 
 func (c ServerConnection) Get(username string) (model.UserData, error) {
@@ -128,34 +123,48 @@ func (c ServerConnection) Get(username string) (model.UserData, error) {
 		return model.UserData{}, err
 	}
 	var user model.UserData
-	err = json.Unmarshal([]byte(response), &user)
-	return user, err
+	jsonErr := json.Unmarshal([]byte(response), &user)
+	if jsonErr != nil {
+		return model.UserData{}, errors.New(response)
+	}
+	return user, nil
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Core
 /////////////////////////////////////////////////////////////////////////////////////
 
-func (s ServerConnection) request(str string) (string, error) {
-	err := s.send(str)
+func (c ServerConnection) request(str string) (string, error) {
+	err := c.send(str)
 	if err != nil {
 		return "", err
 	}
 
-	respose, err := s.read()
+	respose, err := c.read()
 	return respose, err
 }
 
 func (c ServerConnection) send(str string) error {
-	_, err := c.writer.WriteString(str + strconv.QuoteRune(internal.MessageDelim))
+	_, err := c.writer.WriteString(config.ParseWriteMessage(str))
 	return err
 }
 
+func handleVoidResponse(response string, err error) error {
+	if err != nil {
+		return err
+	}
+	if response != config.OK {
+		return errors.New(response)
+	}
+	return nil
+}
+
 func (c ServerConnection) read() (string, error) {
-	str, err := c.reader.ReadString(internal.MessageDelim)
-	return str, err
+	str, err := c.reader.ReadString(config.MessageDelim)
+	return config.ParseMessageRead(str), err
 }
 
 func (c ServerConnection) Disconnect() error {
+	c.send("bye")
 	return c.conn.Close()
 }
