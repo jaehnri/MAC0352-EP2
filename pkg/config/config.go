@@ -4,8 +4,11 @@ const MessageDelim = '\n'
 const messageDelimStr = "\n"
 
 func ParseMessageRead(str string) string {
-	if str[len(str)-2] == '\r' {
+	if len(str) >= 2 && str[len(str)-2] == '\r' {
 		return str[:len(str)-2]
+	}
+	if len(str) == 0 {
+		return ""
 	}
 	return str[:len(str)-1]
 }
