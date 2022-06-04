@@ -49,7 +49,7 @@ func NewClientService(serverConn *conn.ServerConnection) *ClientService {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleNew(params []string) error {
-	err := c.serverConn.Create(params[0], params[1])
+	err := c.serverConn.CreateUser(params[0], params[1])
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (c *ClientService) HandleOut(params []string) error {
 }
 func (c *ClientService) HandleL(params []string) error {
 	fmt.Println("Usuários conectados:")
-	users, err := c.serverConn.Connected()
+	users, err := c.serverConn.ConnectedUsers()
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (c *ClientService) HandleL(params []string) error {
 }
 func (c *ClientService) HandleHalloffame(params []string) error {
 	fmt.Println("Usuários conectados:")
-	users, err := c.serverConn.All()
+	users, err := c.serverConn.AllUsers()
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (c *ClientService) HandleCall(params []string) error {
 	if !c.state.inGame {
 		return errors.New("faça login antes de iniciar um jogo")
 	}
-	user, err := c.serverConn.Get(params[0])
+	user, err := c.serverConn.GetUser(params[0])
 	if err != nil {
 		return err
 	}

@@ -50,9 +50,9 @@ func UdpConnectToServer(ip string, port int) (*ServerConnection, error) {
 
 func newServerConnection(conn net.Conn, heartbeatConn net.Conn) *ServerConnection {
 	return &ServerConnection{
+		conn:            conn,
 		writer:          *bufio.NewWriter(conn),
 		reader:          *bufio.NewReader(conn),
-		conn:            conn,
 		heartbeatConn:   heartbeatConn,
 		heartbeatWriter: *bufio.NewWriter(heartbeatConn),
 		heartbeatReader: *bufio.NewReader(heartbeatConn),
@@ -77,7 +77,7 @@ func (c ServerConnection) SendDraw(username string) error {
 // User
 /////////////////////////////////////////////////////////////////////////////////////
 
-func (c ServerConnection) Create(username string, password string) error {
+func (c ServerConnection) CreateUser(username string, password string) error {
 	response, err := c.request(fmt.Sprintf("new %s %s", username, password))
 	return handleVoidResponse(response, err)
 }
@@ -97,7 +97,7 @@ func (c ServerConnection) Logout(username string) error {
 	return handleVoidResponse(response, err)
 }
 
-func (c ServerConnection) Connected() ([]model.UserData, error) {
+func (c ServerConnection) ConnectedUsers() ([]model.UserData, error) {
 	response, err := c.request("l")
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (c ServerConnection) Connected() ([]model.UserData, error) {
 	return users, nil
 }
 
-func (c ServerConnection) All() ([]model.UserData, error) {
+func (c ServerConnection) AllUsers() ([]model.UserData, error) {
 	response, err := c.request("halloffame")
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (c ServerConnection) All() ([]model.UserData, error) {
 	return users, nil
 }
 
-func (c ServerConnection) Get(username string) (model.UserData, error) {
+func (c ServerConnection) GetUser(username string) (model.UserData, error) {
 	response, err := c.request(fmt.Sprintf("get %s", username))
 	if err != nil {
 		return model.UserData{}, err
