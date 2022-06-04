@@ -63,6 +63,9 @@ func NewClientService(serverConn conn.IServerConnection) *ClientService {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleNew(params []string) error {
+	if len(params) < 2 {
+		return errors.New("new <username> <password>")
+	}
 	err := c.serverConn.CreateUser(params[0], params[1])
 	if err != nil {
 		return err
@@ -74,6 +77,9 @@ func (c *ClientService) HandleNew(params []string) error {
 func (c *ClientService) HandleIn(params []string) error {
 	if c.state.isLogged {
 		return errors.New("você já está logado, faça logout para trocar de usuário")
+	}
+	if len(params) < 2 {
+		return errors.New("in <username> <password>")
 	}
 	username := params[0]
 	err := c.serverConn.Login(username, params[1])
@@ -89,6 +95,9 @@ func (c *ClientService) HandleIn(params []string) error {
 func (c *ClientService) HandlePass(params []string) error {
 	if !c.state.isLogged {
 		return errors.New("você não está logado")
+	}
+	if len(params) < 2 {
+		return errors.New("pass <old-password> <new-password>")
 	}
 	err := c.serverConn.ChangePassword(c.state.username, params[0], params[1])
 	if err != nil {
@@ -117,7 +126,7 @@ func (c *ClientService) HandleL(params []string) error {
 		return err
 	}
 	for _, user := range users {
-		fmt.Printf("• %s (%s)", user.Username, user.State)
+		fmt.Printf("• %s (%s)\n", user.Username, user.State)
 	}
 	return nil
 }
@@ -139,8 +148,14 @@ func (c *ClientService) HandleHalloffame(params []string) error {
 // /////////////////////////////////////////////////////////////////////
 
 func (c *ClientService) HandleCall(params []string) error {
+	if !c.state.isLogged {
+		return errors.New("você precisa logar antes")
+	}
 	if c.state.inGame {
 		return errors.New("você já está jogando")
+	}
+	if len(params) < 1 {
+		return errors.New("call <username>")
 	}
 	oponentName := params[0]
 	if oponentName == c.state.username {
@@ -242,6 +257,9 @@ func (c *ClientService) startGame(userSymbol string, oponentUsername string) {
 func (c *ClientService) HandlePlay(params []string) error {
 	if !c.state.inGame {
 		return errors.New("você não está em um jogo")
+	}
+	if len(params) < 2 {
+		return errors.New("play <i> <j>")
 	}
 	i, erri := strconv.ParseInt(params[0], 10, 32)
 	j, errj := strconv.ParseInt(params[1], 10, 32)
@@ -422,7 +440,7 @@ func (c *ClientService) receiveHeartbeats() {
 func (c *ClientService) readHeartbeats(read chan string) {
 	for {
 		str, err := c.serverConn.ReadHeartbeat()
-		if err != nil {
+		if err == nil {
 			read <- str
 		}
 	}
