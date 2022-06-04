@@ -43,7 +43,7 @@ func (udp *UDPServer) StartUDPServer() {
 		payload := parseUDPPayload(buf, length)
 		response := udp.Router.Route(payload, remote.String())
 
-		conn.Write([]byte(response))
+		conn.WriteToUDP([]byte(response), remote)
 	}
 
 	conn.Close()
