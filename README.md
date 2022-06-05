@@ -48,6 +48,14 @@ Thus, it is a known Docker for Mac issue that the [the docker (Linux) bridge net
 
 Basically, this means that this EP won't work out of the box on MacOS environments.
 
+## Running clients
+To run a client, build it and run the following:
+```sh
+./client <server-ip> <server-port> <conn-type>
+# <conn-type>: tcp or udp
+```
+Note that you cannot run multiple client application in the same machine. This is because it listens to the oponent connection in a constant port.
+
 ## Cleaning
 
 To kill the server and the database:
