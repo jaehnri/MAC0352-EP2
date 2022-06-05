@@ -55,7 +55,7 @@ make run-client-docker-tcp-interactive
 ```
 
 Or UDP:
-```azure
+```sh
 make run-client-docker-udp-interactive
 ```
 
