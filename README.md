@@ -49,13 +49,17 @@ Thus, it is a known Docker for Mac issue that the [the docker (Linux) bridge net
 Basically, this means that this EP won't work out of the box on MacOS environments.
 
 ## Running clients
-To run a client, build it and run the following:
+To run a TCP client, run the following:
 ```sh
-./client <server-ip> <server-port> <conn-type>
-# <conn-type>: tcp or udp
+make run-client-docker-tcp-interactive
 ```
-Note that you cannot run multiple client application in the same machine. This is because it listens to the oponent connection in a constant port.
 
+Or UDP:
+```azure
+make run-client-docker-udp-interactive
+```
+
+Note that you cannot run multiple client applications in the same machine. This is because it listens to opponent's connection in a constant port. Running with the make commands above will use different docker subnet's IPs, that can access the server and also run in bridge's IPs.
 ## Cleaning
 
 To kill the server and the database:
@@ -65,7 +69,7 @@ make shutdown
 
 To kill everything (including the database volume):
 ```sh
-docker-compose down --remove-orphans --volumes
+make remove-all
 ```
 
 

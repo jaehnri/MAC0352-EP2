@@ -10,5 +10,3 @@ COPY ./ ./
 RUN go build -o client ./cmd/client
 
 EXPOSE 8080
-
-#CMD ["./client 172.17.0.3 8080 tcp"]
