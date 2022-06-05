@@ -37,7 +37,7 @@ docker-compose ps
 
 And also by checking the server logs:
 ```sh
-docker logs mac0352-ep2_server_1
+docker logs -f mac0352-ep2_server_1
 ```
 
 ### Observations about Mac
